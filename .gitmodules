@@ -10,3 +10,6 @@
 [submodule "lib/c-vector"]
 	path = lib/c-vector
 	url = https://github.com/Mashpoe/c-vector.git
+[submodule "lib/mipp"]
+	path = lib/mipp
+	url = https://github.com/aff3ct/MIPP.git
