@@ -43,7 +43,7 @@ void morpho_compute_erosion3(const uint8_t** img_in, uint8_t** img_out, const in
                              const int j1);
 
 /**
- * This function performs a dilatation (3x3 convolution). This function does not compute the borders.
+ * This function performs a dilation (3x3 convolution). This function does not compute the borders.
  * @param img_in Input 2D binary image (\f$[i1 - i0 + 1][j1 - j0 + 1]\f$).
  * @param img_out Output 2D binary image (\f$[i1 - i0 + 1][j1 - j0 + 1]\f$). Note that \p img_in and \p img_out have to
  *                point to different frames (in-place computing is NOT supported).
@@ -52,8 +52,8 @@ void morpho_compute_erosion3(const uint8_t** img_in, uint8_t** img_out, const in
  * @param j0 First \f$x\f$ index in the labels (included).
  * @param j1 Last \f$x\f$ index in the labels (included).
  */
-void morpho_compute_dilatation3(const uint8_t** img_in, uint8_t** img_out, const int i0, const int i1, const int j0,
-                                const int j1);
+void morpho_compute_dilation3(const uint8_t** img_in, uint8_t** img_out, const int i0, const int i1, const int j0,
+                              const int j1);
 
 /**
  * This function performs an opening (3x3 convolution). This function does not compute the borders.

@@ -352,7 +352,6 @@ int main(int argc, char** argv) {
         (*visu)["display::in_img"].bind(IG1[0]);
         (*visu)["display::in_RoIs"].bind((uint8_t*)RoIs1);
         (*visu)["display::in_n_RoIs"].bind(&n_RoIs1);
-        (*visu)["display::in_fake"].bind((int32_t*)&n_RoIs1);
         (*visu)("display").exec();
     }
 
@@ -510,8 +509,8 @@ int main(int argc, char** argv) {
             log_RoIs("write").exec();
 
             if (cur_fra > p_vid_in_start) {
-                log_kNN["write::in_data_nearest"].bind(knn_data->nearest[0]);
-                log_kNN["write::in_data_distances"].bind(knn_data->distances[0]);
+                log_kNN["write::in_nearest"].bind(knn_data->nearest[0]);
+                log_kNN["write::in_distances"].bind(knn_data->distances[0]);
 #ifdef MOTION_ENABLE_DEBUG
                 log_kNN["write::in_conflicts"].bind(knn_data->conflicts);
 #endif
@@ -536,7 +535,6 @@ int main(int argc, char** argv) {
             (*visu)["display::in_img"].bind(IG1[0]);
             (*visu)["display::in_RoIs"].bind((uint8_t*)RoIs1);
             (*visu)["display::in_n_RoIs"].bind(&n_RoIs1);
-            (*visu)["display::in_fake"].bind((int32_t*)&n_RoIs1);
             (*visu)("display").exec();
         }
         TIME_POINT(vis_e);

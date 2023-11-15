@@ -12,15 +12,12 @@ Logger_kNN::Logger_kNN(const std::string kNN_path, const size_t fra_start, const
     this->set_name(name);
     this->set_short_name(name);
 
-    this->in_data_nearest = (const uint32_t**)malloc((size_t)(max_size * sizeof(uint32_t*)));
-    this->in_data_distances = (const float**)malloc((size_t)(max_size * sizeof(float*)));
-
     auto &t = this->create_task("write");
 
-    auto si_data_nearest = this->template create_socket_in<uint32_t>(t, "in_data_nearest", max_size * max_size);
-    auto si_data_distances = this->template create_socket_in<float>(t, "in_data_distances", max_size * max_size);
+    auto si_data_distances = this->template create_2d_socket_in<float>(t, "in_distances", max_size, max_size);
+    auto si_data_nearest = this->template create_2d_socket_in<uint32_t>(t, "in_nearest", max_size, max_size);
 #ifdef MOTION_ENABLE_DEBUG
-    auto si_data_conflicts = this->template create_socket_in<uint32_t>(t, "in_data_conflicts", max_size);
+    auto si_data_conflicts = this->template create_socket_in<uint32_t>(t, "in_conflicts", max_size);
 #endif
     auto si_RoIs0 = this->template create_socket_in<uint8_t>(t, "in_RoIs0", max_size * sizeof(RoI_t));
     auto si_n_RoIs0 = this->template create_socket_in<uint32_t>(t, "in_n_RoIs0", 1);
@@ -32,17 +29,14 @@ Logger_kNN::Logger_kNN(const std::string kNN_path, const size_t fra_start, const
         tools_create_folder(kNN_path.c_str());
 
 #ifdef MOTION_ENABLE_DEBUG
-    this->create_codelet(t, [si_data_nearest, si_data_distances, si_data_conflicts, si_RoIs0, si_n_RoIs0, si_RoIs1,
+    this->create_codelet(t, [si_data_distances, si_data_nearest, si_data_conflicts, si_RoIs0, si_n_RoIs0, si_RoIs1,
                              si_n_RoIs1, si_frame]
 #else
-    this->create_codelet(t, [si_data_nearest, si_data_distances, si_RoIs0, si_n_RoIs0, si_RoIs1, si_n_RoIs1, si_frame]
+    this->create_codelet(t, [si_data_distances, si_data_nearest, si_RoIs0, si_n_RoIs0, si_RoIs1, si_n_RoIs1, si_frame]
 #endif
                             (Module &m, runtime::Task &t, const size_t frame_id) -> int {
         auto &lgr_knn = static_cast<Logger_kNN&>(m);
-        tools_linear_2d_nrc_ui32matrix(t[si_data_nearest].get_dataptr<const uint32_t>(), 0, lgr_knn.max_size -1, 0,
-                                       lgr_knn.max_size -1, (const uint32_t**)lgr_knn.in_data_nearest);
-        tools_linear_2d_nrc_f32matrix(t[si_data_distances].get_dataptr<const float>(), 0, lgr_knn.max_size - 1, 0,
-                                      lgr_knn.max_size -1, (const float**)lgr_knn.in_data_distances);
+
         const uint32_t frame = *static_cast<const size_t*>(t[si_frame].get_dataptr());
         if (frame > (uint32_t)lgr_knn.fra_start && !lgr_knn.kNN_path.empty()) {
             char file_path[256];
@@ -50,10 +44,11 @@ Logger_kNN::Logger_kNN(const std::string kNN_path, const size_t fra_start, const
             FILE* file = fopen(file_path, "a");
             fprintf(file, "#\n");
 
-            kNN_data_t kNN_data = { (float**)lgr_knn.in_data_distances,
-                                    (uint32_t**)lgr_knn.in_data_nearest,
+            // calling get_2d_dataptr() has a small cost (it performs the 1D to 2D conversion)
+            kNN_data_t kNN_data = { const_cast<float**>(t[si_data_distances].get_2d_dataptr<const float>()),
+                                    const_cast<uint32_t**>(t[si_data_nearest].get_2d_dataptr<const uint32_t>()),
 #ifdef MOTION_ENABLE_DEBUG
-                                    t[si_data_conflicts].get_dataptr<const uint32_t>(),
+                                    const_cast<uint32_t*>(t[si_data_conflicts].get_dataptr<const uint32_t>()),
 #else
                                     nullptr,
 #endif
@@ -71,6 +66,4 @@ Logger_kNN::Logger_kNN(const std::string kNN_path, const size_t fra_start, const
 }
 
 Logger_kNN::~Logger_kNN() {
-    free(this->in_data_nearest);
-    free(this->in_data_distances);
 }

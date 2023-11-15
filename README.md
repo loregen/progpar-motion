@@ -10,8 +10,9 @@ Two strong assumptions are made:
 
 ## Dependencies
 
-This project uses `ffmpeg-io`, `nrc2`, `c-vector` and `aff3ct-core` projects as 
-Git submodules, **you need to download them with the following command**:
+This project uses `ffmpeg-io`, `nrc2`, `c-vector`, `mipp` and `aff3ct-core` 
+projects as Git submodules, **you need to download them with the following 
+command**:
 ```bash
 git submodule update --init --recursive
 ```

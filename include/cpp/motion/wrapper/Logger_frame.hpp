@@ -19,7 +19,6 @@ protected:
     const int j0;
     const int j1;
     const uint8_t show_id;
-    const uint32_t** in_labels;
     img_data_t* img_data;
     video_writer_t* video_writer;
 public:

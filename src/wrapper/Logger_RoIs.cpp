@@ -37,9 +37,9 @@ Logger_RoIs::Logger_RoIs(const std::string RoIs_path, const size_t fra_start, co
             int prev_frame = frame > lgr_roi.fra_start ? (int)frame - (lgr_roi.fra_skip + 1) : -1;
             features_RoIs0_RoIs1_write(file, prev_frame, frame,
                                        t[si_RoIs0].get_dataptr<const RoI_t>(),
-                                       *t[si_n_RoIs0].get_dataptr<uint32_t>(),
+                                       *t[si_n_RoIs0].get_dataptr<const uint32_t>(),
                                        t[si_RoIs1].get_dataptr<const RoI_t>(),
-                                       *t[si_n_RoIs1].get_dataptr<uint32_t>(),
+                                       *t[si_n_RoIs1].get_dataptr<const uint32_t>(),
                                        lgr_roi.tracking_data->tracks);
             fclose(file);
         }

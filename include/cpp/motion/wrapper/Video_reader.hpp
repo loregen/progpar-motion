@@ -16,9 +16,7 @@ class Video_reader : public aff3ct::module::Module,
 protected:
     int i0, i1, j0, j1;
     video_reader_t* video;
-    uint8_t** out_img;
     bool done;
-
 public:
     Video_reader(const std::string filename, const size_t frame_start, const size_t frame_end, const size_t frame_skip,
                  const int bufferize, const size_t n_ffmpeg_threads,
@@ -27,7 +25,6 @@ public:
     virtual ~Video_reader();
 
     virtual bool is_done() const;
-    inline uint8_t** get_out_img();
     int get_i0();
     int get_i1();
     int get_j0();

@@ -30,6 +30,17 @@ void morpho_compute_erosion3(const uint8_t** img_in, uint8_t** img_out, const in
     assert(img_in != NULL);
     assert(img_out != NULL);
     assert(img_in != (const uint8_t**)img_out);
+
+    // copy the borders
+    for (int i = i0; i <= i1; i++) {
+        img_out[i][j0] = img_in[i][j0];
+        img_out[i][j1] = img_in[i][j1];
+    }
+    for (int j = j0; j <= j1; j++) {
+        img_out[i0][j] = img_in[i0][j];
+        img_out[i1][j] = img_in[i1][j];
+    }
+
     for (int i = i0 + 1; i <= i1 - 1; i++) {
         for (int j = j0 + 1; j <= j1 - 1; j++) {
             uint8_t c0 = img_in[i - 1][j - 1] & img_in[i - 1][j] & img_in[i - 1][j + 1];
@@ -40,11 +51,22 @@ void morpho_compute_erosion3(const uint8_t** img_in, uint8_t** img_out, const in
     }
 }
 
-void morpho_compute_dilatation3(const uint8_t** img_in, uint8_t** img_out, const int i0, const int i1, const int j0,
-                                const int j1) {
+void morpho_compute_dilation3(const uint8_t** img_in, uint8_t** img_out, const int i0, const int i1, const int j0,
+                              const int j1) {
     assert(img_in != NULL);
     assert(img_out != NULL);
     assert(img_in != (const uint8_t**)img_out);
+
+    // copy the borders
+    for (int i = i0; i <= i1; i++) {
+        img_out[i][j0] = img_in[i][j0];
+        img_out[i][j1] = img_in[i][j1];
+    }
+    for (int j = j0; j <= j1; j++) {
+        img_out[i0][j] = img_in[i0][j];
+        img_out[i1][j] = img_in[i1][j];
+    }
+
     for (int i = i0 + 1; i <= i1 - 1; i++) {
         for (int j = j0 + 1; j <= j1 - 1; j++) {
             uint8_t c0 = img_in[i - 1][j - 1] | img_in[i - 1][j] | img_in[i - 1][j + 1];
@@ -59,14 +81,14 @@ void morpho_compute_opening3(morpho_data_t* morpho_data, const uint8_t** img_in,
                              const int i1, const int j0, const int j1) {
     assert(img_in != NULL);
     assert(img_out != NULL);
-    morpho_compute_erosion3   ((const uint8_t**)img_in, morpho_data->IB, i0, i1, j0, j1);
-    morpho_compute_dilatation3((const uint8_t**)morpho_data->IB, img_out, i0, i1, j0, j1);
+    morpho_compute_erosion3 ((const uint8_t**)img_in, morpho_data->IB, i0, i1, j0, j1);
+    morpho_compute_dilation3((const uint8_t**)morpho_data->IB, img_out, i0, i1, j0, j1);
 }
 
 void morpho_compute_closing3(morpho_data_t* morpho_data, const uint8_t** img_in, uint8_t** img_out, const int i0,
                              const int i1, const int j0, const int j1) {
     assert(img_in != NULL);
     assert(img_out != NULL);
-    morpho_compute_dilatation3((const uint8_t**)img_in, morpho_data->IB, i0, i1, j0, j1);
-    morpho_compute_erosion3   ((const uint8_t**)morpho_data->IB, img_out, i0, i1, j0, j1);
+    morpho_compute_dilation3((const uint8_t**)img_in, morpho_data->IB, i0, i1, j0, j1);
+    morpho_compute_erosion3 ((const uint8_t**)morpho_data->IB, img_out, i0, i1, j0, j1);
 }
