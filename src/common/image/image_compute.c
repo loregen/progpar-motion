@@ -416,7 +416,7 @@ void image_color_draw_BBs(img_data_t* img_data, const uint8_t** img, const enum 
                 pixels[i][j].b = img[i][j * 3 + 2];
             }
         }
-    } else if (pixfmt == PIXFMT_GRAY) {
+    } else if (pixfmt == PIXFMT_GRAY8) {
         for (size_t i = 0; i < img_data->height; i++) {
             for (size_t j = 0; j < img_data->width; j++) {
                 pixels[i][j].r = img[i][j];
