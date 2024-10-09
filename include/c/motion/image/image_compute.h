@@ -69,8 +69,9 @@ img_data_t* image_color_alloc(const size_t img_height, const size_t img_width);
  * corresponding to each BB on the color image. Moreover, if the program is linked with OpenCV, this routine add the
  * legend on the top left corner.
  * @param img_data Image data.
- * @param img 2D grayscale image (2D array of size
+ * @param img 2D grayscale or color image (2D array of size
  *            \f$[\texttt{img\_data->height}][\texttt{img\_data->width}]\f$). This image will be copied in `img_data`.
+ * @param pixfmt Pixels format (grayscale or RGB) of `img`.
  * @param BBs List of bounding boxes.
  * @param BBs_color List of colors associated to the bounding boxes.
  * @param n_BBs Number of bounding boxes to draw.
@@ -78,8 +79,9 @@ img_data_t* image_color_alloc(const size_t img_height, const size_t img_width);
  *                OpenCV).
  * @param is_gt Boolean to draw the ground truth legend (has no effect is the program has not been linked with OpenCV).
  */
-void image_color_draw_BBs(img_data_t* img_data, const uint8_t** img, const BB_t* BBs, const enum color_e* BBs_color,
-                          const size_t n_BBs, const uint8_t show_id, const uint8_t is_gt);
+void image_color_draw_BBs(img_data_t* img_data, const uint8_t** img, const enum pixfmt_e pixfmt, const BB_t* BBs,
+                          const enum color_e* BBs_color, const size_t n_BBs, const uint8_t show_id,
+                          const uint8_t is_gt);
 
 /**
  * Draw the frame id given in parameter at the bottom left corner of the image.

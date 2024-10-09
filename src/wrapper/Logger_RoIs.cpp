@@ -3,12 +3,10 @@
 
 #include "motion/wrapper/Logger_RoIs.hpp"
 
-using namespace aff3ct;
-using namespace aff3ct::module;
-
 Logger_RoIs::Logger_RoIs(const std::string RoIs_path, const size_t fra_start, const size_t fra_skip,
                          const size_t max_RoIs_size, const tracking_data_t* tracking_data)
-: Module(), RoIs_path(RoIs_path), fra_start(fra_start), fra_skip(fra_skip), tracking_data(tracking_data) {
+: spu::module::Stateful(), RoIs_path(RoIs_path), fra_start(fra_start), fra_skip(fra_skip), tracking_data(tracking_data)
+{
     assert(tracking_data != NULL);
 
     const std::string name = "Logger_RoIs";
@@ -26,7 +24,7 @@ Logger_RoIs::Logger_RoIs(const std::string RoIs_path, const size_t fra_start, co
         tools_create_folder(RoIs_path.c_str());
 
     this->create_codelet(t, [si_RoIs0, si_n_RoIs0, si_RoIs1, si_n_RoIs1, si_frame]
-                            (Module &m, runtime::Task &t, const size_t frame_id) -> int {
+                            (spu::module::Module &m, spu::runtime::Task &t, const size_t frame_id) -> int {
         auto &lgr_roi = static_cast<Logger_RoIs&>(m);
 
         const uint32_t frame = *t[si_frame].get_dataptr<const uint32_t>();
@@ -43,7 +41,7 @@ Logger_RoIs::Logger_RoIs(const std::string RoIs_path, const size_t fra_start, co
                                        lgr_roi.tracking_data->tracks);
             fclose(file);
         }
-        return aff3ct::runtime::status_t::SUCCESS;
+        return spu::runtime::status_t::SUCCESS;
     });
 }
 

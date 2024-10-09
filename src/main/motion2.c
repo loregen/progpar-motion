@@ -257,7 +257,8 @@ int main(int argc, char** argv) {
     int i0, i1, j0, j1; // image dimension (i0 = y_min, i1 = y_max, j0 = x_min, j1 = x_max)
     video_reader_t* video = video_reader_alloc_init(p_vid_in_path, p_vid_in_start, p_vid_in_stop, p_vid_in_skip,
                                                     p_vid_in_buff, p_vid_in_threads, VCDC_FFMPEG_IO,
-                                                    video_hwaccel_str_to_enum(p_vid_in_dec_hw), &i0, &i1, &j0, &j1);
+                                                    video_hwaccel_str_to_enum(p_vid_in_dec_hw), PIXFMT_GRAY8, 0, NULL,
+                                                    &i0, &i1, &j0, &j1);
     video->loop_size = (size_t)(p_vid_in_loop);
     video_writer_t* video_writer = NULL;
     img_data_t* img_data = NULL;
@@ -265,14 +266,14 @@ int main(int argc, char** argv) {
         img_data = image_gs_alloc((i1 - i0) + 1, (j1 - j0) + 1);
         const size_t n_threads = 1;
         video_writer = video_writer_alloc_init(p_ccl_fra_path, p_vid_in_start, n_threads, (i1 - i0) + 1, (j1 - j0) + 1,
-                                               PIXFMT_GRAY, VCDC_FFMPEG_IO, 0);
+                                               PIXFMT_GRAY8, VCDC_FFMPEG_IO, 0, 0, NULL);
     }
     visu_data_t *visu_data = NULL;
     if (p_vid_out_play || p_vid_out_path) {
         const uint8_t n_threads = 1;
         visu_data = visu_alloc_init(p_vid_out_path, p_vid_in_start, n_threads, (i1 - i0) + 1, (j1 - j0) + 1,
-                                    PIXFMT_RGB24, VCDC_FFMPEG_IO, p_vid_out_id, p_vid_out_play, p_trk_obj_min,
-                                    p_cca_roi_max2, p_vid_in_skip);
+                                    PIXFMT_GRAY8, PIXFMT_RGB24, VCDC_FFMPEG_IO, p_vid_out_id, p_vid_out_play, 0, NULL,
+                                    p_trk_obj_min, p_cca_roi_max2, p_vid_in_skip);
     }
 
     // --------------------- //
@@ -309,7 +310,7 @@ int main(int argc, char** argv) {
     // ------------------------- //
 
     int cur_fra;
-    if ((cur_fra = video_reader_get_frame(video, IG1)) != -1) {
+    if ((cur_fra = video_reader_get_frame(video, IG1, NULL)) != -1) {
         sigma_delta_init_data(sd_data0, (const uint8_t**)IG1, i0, i1, j0, j1);
         sigma_delta_init_data(sd_data1, (const uint8_t**)IG1, i0, i1, j0, j1);
     } else {
@@ -355,7 +356,7 @@ int main(int argc, char** argv) {
     while (1) {
         // step 0: video decoding
         TIME_POINT(dec_b);
-        cur_fra = video_reader_get_frame(video, IG1);
+        cur_fra = video_reader_get_frame(video, IG1, NULL);
         TIME_POINT(dec_e);
         TIME_ACC(dec_a, dec_b, dec_e);
 

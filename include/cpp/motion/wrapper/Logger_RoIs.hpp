@@ -6,11 +6,11 @@
 #pragma once
 
 #include <stdint.h>
-#include <aff3ct-core.hpp>
+#include <streampu.hpp>
 
 #include "motion/tracking/tracking_struct.h"
 
-class Logger_RoIs : public aff3ct::module::Module {
+class Logger_RoIs : public spu::module::Stateful {
 protected:
     const std::string RoIs_path;
     const size_t fra_start;

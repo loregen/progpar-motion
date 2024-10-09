@@ -6,12 +6,12 @@
 #pragma once
 
 #include <stdint.h>
-#include <aff3ct-core.hpp>
+#include <streampu.hpp>
 
 #include "motion/image/image_struct.h"
 #include "motion/video/video_struct.h"
 
-class Logger_frame : public aff3ct::module::Module {
+class Logger_frame : public spu::module::Stateful {
 protected:
     const std::string frames_path;
     const int i0;

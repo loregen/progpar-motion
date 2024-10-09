@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -11,16 +12,17 @@
 #include "motion/image/image_compute.h"
 
 visu_data_t* visu_alloc_init(const char* path, const size_t start, const size_t n_ffmpeg_threads,
-                             const size_t img_height, const size_t img_width, const enum pixfmt_e pixfmt,
-                             const enum video_codec_e codec_type, const uint8_t draw_track_id,
-                             const int win_play, const size_t buff_size, const size_t max_RoIs_size,
+                             const size_t img_height, const size_t img_width, const enum pixfmt_e pixfmt_in,
+                             const enum pixfmt_e pixfmt_out, const enum video_codec_e codec_type,
+                             const uint8_t draw_track_id, const int win_play, const uint8_t ffmpeg_debug,
+                             const char* ffmpeg_out_extra_opts, const size_t buff_size, const size_t max_RoIs_size,
                              const uint8_t skip_fra) {
     assert(buff_size > 0);
     visu_data_t* visu = (visu_data_t*)malloc(sizeof(visu_data_t));
     visu->img_height = img_height;
     visu->img_width = img_width;
     visu->video_writer = video_writer_alloc_init(path, start, n_ffmpeg_threads, visu->img_height, visu->img_width,
-                                                 pixfmt, codec_type, win_play);
+                                                 pixfmt_out, codec_type, win_play, ffmpeg_debug, ffmpeg_out_extra_opts);
     visu->buff_size = buff_size;
     visu->skip_fra = skip_fra;
     visu->buff_id_read = 0;
@@ -29,8 +31,11 @@ visu_data_t* visu_alloc_init(const char* path, const size_t start, const size_t 
     visu->I = (uint8_t***)malloc(visu->buff_size * sizeof(uint8_t**));
     visu->RoIs = (RoI_t**)malloc(visu->buff_size * sizeof(RoI_t**));
     visu->frame_ids = (uint32_t*)malloc(visu->buff_size * sizeof(uint32_t));
+    visu->pixfmt_in = pixfmt_in;
+
+    size_t pixsize = image_get_pixsize(visu->pixfmt_in);
     for (size_t i = 0; i < visu->buff_size; i++) {
-        visu->I[i] = ui8matrix(0, visu->img_height + 1, 0, visu->img_width + 1);
+        visu->I[i] = ui8matrix(0, visu->img_height + 1, 0, (visu->img_width + 1) * pixsize);
         visu->RoIs[i] = features_alloc_RoIs(max_RoIs_size);
     }
     visu->img_data = image_color_alloc(img_height, img_width);
@@ -89,8 +94,9 @@ void _visu_write_or_play(visu_data_t* visu, const vec_track_t tracks) {
     }
 
     const int is_gt_path = 0;
-    image_color_draw_BBs(visu->img_data, (const uint8_t**)visu->I[real_buff_id_read], (const BB_t*)visu->BBs,
-                         (const enum color_e*)visu->BBs_color, cpt, visu->draw_track_id, is_gt_path);
+    image_color_draw_BBs(visu->img_data, (const uint8_t**)visu->I[real_buff_id_read], visu->pixfmt_in,
+                         (const BB_t*)visu->BBs, (const enum color_e*)visu->BBs_color, cpt, visu->draw_track_id,
+                         is_gt_path);
 
 #ifdef MOTION_OPENCV_LINK
     image_color_draw_frame_id(visu->img_data, frame_id);
@@ -116,9 +122,10 @@ void visu_display(visu_data_t* visu, const uint8_t** img, const RoI_t* RoIs, con
     // ------------------------
     assert(visu->n_filled_buff <= visu->buff_size);
 
+    size_t pixsize = image_get_pixsize(visu->pixfmt_in);
     const size_t real_buff_id_write = visu->buff_id_write % visu->buff_size;
     for (size_t i = 0; i < visu->img_height; i++)
-        memcpy(visu->I[real_buff_id_write][i], img[i], visu->img_width * sizeof(uint8_t));
+        memcpy(visu->I[real_buff_id_write][i], img[i], visu->img_width * sizeof(uint8_t) * pixsize);
     memcpy(visu->RoIs[real_buff_id_write], RoIs, n_RoIs * sizeof(RoI_t));
     visu->frame_ids[real_buff_id_write] = frame_id;
 
@@ -136,9 +143,10 @@ void visu_flush(visu_data_t* visu, const vec_track_t tracks) {
 }
 
 void visu_free(visu_data_t* visu) {
+    size_t pixsize = image_get_pixsize(visu->pixfmt_in);
     video_writer_free(visu->video_writer);
     for (size_t i = 0; i < visu->buff_size; i++) {
-        free_ui8matrix(visu->I[i], 0, visu->img_height + 1, 0, visu->img_width + 1);
+        free_ui8matrix(visu->I[i], 0, visu->img_height + 1, 0, (visu->img_width + 1) * pixsize);
         features_free_RoIs(visu->RoIs[i]);
     }
     free(visu->I);

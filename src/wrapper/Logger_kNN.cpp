@@ -3,11 +3,9 @@
 
 #include "motion/wrapper/Logger_kNN.hpp"
 
-using namespace aff3ct;
-using namespace aff3ct::module;
-
 Logger_kNN::Logger_kNN(const std::string kNN_path, const size_t fra_start, const size_t max_size)
-: Module(), kNN_path(kNN_path), fra_start(fra_start), max_size(max_size) {
+: spu::module::Stateful(), kNN_path(kNN_path), fra_start(fra_start), max_size(max_size)
+{
     const std::string name = "Logger_kNN";
     this->set_name(name);
     this->set_short_name(name);
@@ -34,7 +32,7 @@ Logger_kNN::Logger_kNN(const std::string kNN_path, const size_t fra_start, const
 #else
     this->create_codelet(t, [si_data_distances, si_data_nearest, si_RoIs0, si_n_RoIs0, si_RoIs1, si_n_RoIs1, si_frame]
 #endif
-                            (Module &m, runtime::Task &t, const size_t frame_id) -> int {
+                            (spu::module::Module &m, spu::runtime::Task &t, const size_t frame_id) -> int {
         auto &lgr_knn = static_cast<Logger_kNN&>(m);
 
         const uint32_t frame = *static_cast<const size_t*>(t[si_frame].get_dataptr());
@@ -61,7 +59,7 @@ Logger_kNN::Logger_kNN(const std::string kNN_path, const size_t fra_start, const
                                      *t[si_n_RoIs1].get_dataptr<const uint32_t>());
             fclose(file);
         }
-        return aff3ct::runtime::status_t::SUCCESS;
+        return spu::runtime::status_t::SUCCESS;
     });
 }
 

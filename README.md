@@ -10,7 +10,7 @@ Two strong assumptions are made:
 
 ## Dependencies
 
-This project uses `ffmpeg-io`, `nrc2`, `c-vector`, `mipp` and `aff3ct-core` 
+This project uses `ffmpeg-io`, `nrc2`, `c-vector`, `mipp` and `streampu` 
 projects as Git submodules, **you need to download them with the following 
 command**:
 ```bash
@@ -33,11 +33,11 @@ sudo apt install ffmpeg libopencv-dev cmake
 ## Compilation
 
 To compile an optimized version of the code with debug info and link with 
-`OpenCV` and `aff3ct-core` libraries:
+`OpenCV` and `StreamPU` libraries:
 ```bash
 mkdir build
 cd build
-cmake .. -DMOTION_OPENCV_LINK=ON -DMOTION_AFF3CT_RUNTIME=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O3 -g" -DCMAKE_C_FLAGS_RELWITHDEBINFO="-O3 -g" -DCMAKE_CXX_FLAGS="-Wall -funroll-loops -fstrict-aliasing -march=native" -DCMAKE_C_FLAGS="-funroll-loops -fstrict-aliasing -march=native"
+cmake .. -DMOTION_OPENCV_LINK=ON -DMOTION_SPU_RUNTIME=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O3 -g" -DCMAKE_C_FLAGS_RELWITHDEBINFO="-O3 -g" -DCMAKE_CXX_FLAGS="-Wall -funroll-loops -fstrict-aliasing -march=native" -DCMAKE_C_FLAGS="-funroll-loops -fstrict-aliasing -march=native"
 make -j4
 ```
 

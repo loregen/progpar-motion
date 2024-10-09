@@ -3,12 +3,10 @@
 
 #include "motion/wrapper/Logger_tracks.hpp"
 
-using namespace aff3ct;
-using namespace aff3ct::module;
-
 Logger_tracks::Logger_tracks(const std::string tracks_path, const size_t fra_start,
                              const tracking_data_t* tracking_data)
-: Module(), tracks_path(tracks_path), fra_start(fra_start), tracking_data(tracking_data) {
+: spu::module::Stateful(), tracks_path(tracks_path), fra_start(fra_start), tracking_data(tracking_data)
+{
     assert(tracking_data != NULL);
 
     const std::string name = "Logger_tracks";
@@ -22,7 +20,7 @@ Logger_tracks::Logger_tracks(const std::string tracks_path, const size_t fra_sta
         tools_create_folder(tracks_path.c_str());
 
     this->create_codelet(t, [si_frame]
-                            (Module &m, runtime::Task &t, const size_t frame_id) -> int {
+                            (spu::module::Module &m, spu::runtime::Task &t, const size_t frame_id) -> int {
         auto &lgr_trk = static_cast<Logger_tracks&>(m);
 
         const uint32_t frame = *static_cast<const size_t*>(t[si_frame].get_dataptr());
@@ -36,7 +34,7 @@ Logger_tracks::Logger_tracks(const std::string tracks_path, const size_t fra_sta
             fclose(file);
         }
 
-        return aff3ct::runtime::status_t::SUCCESS;
+        return spu::runtime::status_t::SUCCESS;
     });
 }
 

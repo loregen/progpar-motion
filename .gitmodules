@@ -10,3 +10,6 @@
 [submodule "lib/mipp"]
 	path = lib/mipp
 	url = https://github.com/aff3ct/MIPP.git
+[submodule "lib/streampu"]
+	path = lib/streampu
+	url = https://github.com/aff3ct/streampu.git

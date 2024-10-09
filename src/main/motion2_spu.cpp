@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <nrc2.h>
 #include <math.h>
+#include <streampu.hpp>
 
 #include "vec.h"
 
@@ -29,8 +32,6 @@
 #include "motion/wrapper/Logger_tracks.hpp"
 #include "motion/wrapper/Visu.hpp"
 
-using namespace aff3ct;
-using namespace aff3ct::module;
 
 int main(int argc, char** argv) {
 
@@ -195,9 +196,9 @@ int main(int argc, char** argv) {
     // -- HEADING DISPLAY -- //
     // --------------------- //
 
-    printf("#  ----------------- \n");
-    printf("# |  MOTION2 AFF3CT |\n");
-    printf("#  ----------------- \n");
+    printf("#  --------------- \n");
+    printf("# |  MOTION2 SPU  |\n");
+    printf("#  --------------- \n");
     printf("#\n");
     printf("# Parameters:\n");
     printf("# -----------\n");
@@ -309,8 +310,9 @@ int main(int argc, char** argv) {
     std::unique_ptr<Visu> visu;
     if (p_vid_out_play || p_vid_out_path) {
         const uint8_t n_threads = 1;
-        visu.reset(new Visu(p_vid_out_path, p_vid_in_start, n_threads, i0, i1, j0, j1, PIXFMT_RGB24, VCDC_FFMPEG_IO,
-                            p_vid_out_id, p_vid_out_play, p_trk_obj_min, p_cca_roi_max2, p_vid_in_skip, tracking_data));
+        visu.reset(new Visu(p_vid_out_path, p_vid_in_start, n_threads, i0, i1, j0, j1, PIXFMT_GRAY8, PIXFMT_RGB24,
+                            VCDC_FFMPEG_IO, p_vid_out_id, p_vid_out_play, p_trk_obj_min, p_cca_roi_max2, p_vid_in_skip,
+                            tracking_data));
     }
 
     // ------------------------- //
@@ -318,7 +320,7 @@ int main(int argc, char** argv) {
     // ------------------------- //
 
     uint32_t cur_fra;
-    video["generate::out_img"].bind(&IG1[0][0]);
+    video["generate::out_img_gray8"].bind(&IG1[0][0]);
     video["generate::out_frame"].bind(&cur_fra);
     video("generate").exec();
 
@@ -372,7 +374,7 @@ int main(int argc, char** argv) {
         TIME_POINT(dec_b);
         try {
             video("generate").exec();
-        } catch (const tools::processing_aborted& ) {}
+        } catch (const spu::tools::processing_aborted&) {}
         TIME_POINT(dec_e);
         TIME_ACC(dec_a, dec_b, dec_e);
 
@@ -545,7 +547,7 @@ int main(int argc, char** argv) {
         IG0 = IG1;
         IG1 = tmp;
         // here we need to rebind the IG1 because we swapped the IG0 & IG1 buffers!
-        video["generate::out_img"].bind(&IG1[0][0]);
+        video["generate::out_img_gray8"].bind(&IG1[0][0]);
 
         n_processed_frames++;
         n_moving_objs = tracking_count_objects(tracking_data->tracks);

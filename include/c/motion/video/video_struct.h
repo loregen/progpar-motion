@@ -13,8 +13,6 @@
  */
 enum video_codec_e { VCDC_FFMPEG_IO = 0, /*!< Library calling the `ffmpeg` executable. The communication is made through
                                               system pipes. */
-                     VCDC_VCODECS_IO, /*!< Library based on `AVCodec` library calls. It should be faster than
-                                           `VCDC_FFMPEG_IO`. */
 };
 
 /**
@@ -30,7 +28,7 @@ enum video_codec_hwaccel_e {
  *  Video reader structure.
  */
 typedef struct {
-    enum video_codec_e codec_type; /*!< Video decoder type (`VCDC_FFMPEG_IO` or `VCDC_VCODECS_IO`). */
+    enum video_codec_e codec_type; /*!< Video decoder type (`VCDC_FFMPEG_IO`). */
     void* metadata; /*!< Internal metadata used by the video decoder. */
     size_t frame_start; /*!< Start frame number (first frame is frame 0). */
     size_t frame_end; /*!< Last frame number. */
@@ -47,17 +45,10 @@ typedef struct {
 } video_reader_t;
 
 /**
- *  Pixel formats enumeration.
- */
-enum pixfmt_e { PIXFMT_RGB24 = 0, /*!< 24 bits Red-Green-Blue. */
-                PIXFMT_GRAY /*!< 8 bits grayscale. */
-};
-
-/**
  *  Video writer structure.
  */
 typedef struct {
-    enum video_codec_e codec_type; /*!< Video encoder type (`VCDC_FFMPEG_IO` or `VCDC_VCODECS_IO`). */
+    enum video_codec_e codec_type; /*!< Video encoder type (`VCDC_FFMPEG_IO`). */
     void* metadata; /*!< Internal metadata used by the video encoder. */
     char path[2048]; /*!< Path to the video or images. */
     int win_play; /*!< Boolean: if 0 write into a file, if 1 play in a SDL window. */

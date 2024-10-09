@@ -6,9 +6,9 @@
 #pragma once
 
 #include <stdint.h>
-#include <aff3ct-core.hpp>
+#include <streampu.hpp>
 
-class Logger_kNN : public aff3ct::module::Module {
+class Logger_kNN : public spu::module::Stateful {
 protected:
     const std::string kNN_path;
     const size_t fra_start;

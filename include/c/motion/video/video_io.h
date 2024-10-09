@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "motion/image/image_struct.h"
 #include "motion/video/video_struct.h"
 
 /**
@@ -16,9 +17,12 @@
  * @param bufferize Boolean to store the entire video sequence in memory first (this is useful for benchmarks
  *                  but usually the video sequences are too big to be stored in memory).
  * @param n_ffmpeg_threads Number of threads used in FFMPEG to decode the video sequence (0 means FFMPEG will decide).
- * @param codec_type Select the API to use for video codec (`VCDC_FFMPEG_IO` or `VCDC_VCODECS_IO`).
+ * @param codec_type Select the API to use for video codec (`VCDC_FFMPEG_IO`).
  * @param hwaccel Select Hardware accelerator (`VCDC_HWACCEL_NONE`, `VCDC_HWACCEL_NVDEC`, `VCDC_HWACCEL_VIDEOTOOLBOX`).
  *                A NULL value will default to `VCDC_HWACCEL_NONE`.
+ * @param pixfmt Pixels format (PIXFMT_GRAY8 or PIXFMT_RGB24).
+ * @param ffmpeg_debug Print the ffmpeg command line.
+ * @param ffmpeg_in_extra_opts Pass extra arguments to ffmpeg (can be NULL).
  * @param i0 Return the first \f$y\f$ index in the labels (included).
  * @param i1 Return the last \f$y\f$ index in the labels (included).
  * @param j0 Return the first \f$x\f$ index in the labels (included).
@@ -28,15 +32,17 @@
 video_reader_t* video_reader_alloc_init(const char* path, const size_t start, const size_t end, const size_t skip,
                                         const int bufferize, const size_t n_ffmpeg_threads,
                                         const enum video_codec_e codec_type, const enum video_codec_hwaccel_e hwaccel,
-                                        int* i0, int* i1, int* j0, int* j1);
+                                        const enum pixfmt_e pixfmt, const uint8_t ffmpeg_debug,
+                                        const char* ffmpeg_in_extra_opts, int* i0, int* i1, int* j0, int* j1);
 
 /**
  * Write grayscale image in a given 2D array.
  * @param video A pointer of previously allocated inner video reader data.
- * @param img Output grayscale image (2D array \f$[i1 - i0 + 1][j1 - j0 + 1]\f$).
+ * @param img_gray8 Output grayscale image (2D array \f$[i1 - i0 + 1][j1 - j0 + 1]\f$), can be NULL if rgb mode.
+ * @param img_rgb24 Output color image (2D array \f$[i1 - i0 + 1][j1 - j0 + 1]\f$), can be NULL if grayscale mode.
  * @return The frame id (positive integer) or -1 if there is no more frame to read.
  */
-int video_reader_get_frame(video_reader_t* video, uint8_t** img);
+int video_reader_get_frame(video_reader_t* video, uint8_t** img_gray8, uint8_t** img_rgb24);
 
 /**
  * Deallocation of inner video reader data.
@@ -51,14 +57,17 @@ void video_reader_free(video_reader_t* video);
  * @param n_ffmpeg_threads Number of threads used in FFMPEG to encode the video sequence (0 means FFMPEG will decide).
  * @param img_height Images height.
  * @param img_width Images width.
- * @param pixfmt Pixels format (grayscale or RGB).
- * @param codec_type Select the API to use for video codec (`VCDC_FFMPEG_IO` or `VCDC_VCODECS_IO`).
+ * @param pixfmt Pixels format (PIXFMT_GRAY8 or PIXFMT_RGB24).
+ * @param codec_type Select the API to use for video codec (`VCDC_FFMPEG_IO`).
  * @param win_play Boolean, if 0 write into a file, if 1 play in a SDL window.
+ * @param ffmpeg_debug Print the ffmpeg command line.
+ * @param ffmpeg_out_extra_opts Pass extra arguments to ffmpeg (can be NULL).
  * @return The allocated data.
  */
 video_writer_t* video_writer_alloc_init(const char* path, const size_t start, const size_t n_ffmpeg_threads,
                                         const size_t img_height, const size_t img_width, const enum pixfmt_e pixfmt,
-                                        const enum video_codec_e codec_type, const int win_play);
+                                        const enum video_codec_e codec_type, const int win_play,
+                                        const uint8_t ffmpeg_debug, const char* ffmpeg_out_extra_opts);
 
 /**
  * Allocation of inner data required for a video writer.

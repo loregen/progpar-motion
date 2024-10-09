@@ -29,6 +29,7 @@ typedef struct {
     size_t n_filled_buff; /*!< Number of filled buffers. */
     uint8_t draw_track_id; /*!< If 1, draw the track id corresponding to the bounding box. */
     uint8_t skip_fra; /*!< Number of skipped frames between two 'visu_display' calls (generally this is 0). */
+    enum pixfmt_e pixfmt_in; /*!< Pixel format of the input images */
 
     vec_BB_t BBs;
     vec_color_e BBs_color;
