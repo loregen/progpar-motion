@@ -510,7 +510,7 @@ int main(int argc, char** argv) {
             log_RoIs["write::in_frame"].bind(&cur_fra);
             log_RoIs("write").exec();
 
-            if (cur_fra > p_vid_in_start) {
+            if (cur_fra > (uint32_t)p_vid_in_start) {
                 log_kNN["write::in_nearest"].bind(knn_data->nearest[0]);
                 log_kNN["write::in_distances"].bind(knn_data->distances[0]);
 #ifdef MOTION_ENABLE_DEBUG
