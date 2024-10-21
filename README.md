@@ -119,6 +119,7 @@ wget www.potionmagic.eu/~adrien/data/traffic.zip
 unzip traffic.zip
 ```
 
+
 Run `motion2` on it:
 ```bash
 mkdir traffic_2160p_ccl # this is required for the '--ccl-fra-path' option
