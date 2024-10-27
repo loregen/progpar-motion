@@ -4,6 +4,8 @@
  */
 
 #pragma once
+#include <stdint.h>
+
 
 /**
  *  Inner Sigma-Delta data required to perform the Sigma-Delta algorithm.

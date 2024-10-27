@@ -31,6 +31,7 @@
 #include "motion/wrapper/Logger_kNN.hpp"
 #include "motion/wrapper/Logger_tracks.hpp"
 #include "motion/wrapper/Visu.hpp"
+#include "motion/wrapper/Sigma_delta.hpp"
 
 
 int main(int argc, char** argv) {
@@ -306,6 +307,9 @@ int main(int argc, char** argv) {
     Logger_RoIs log_RoIs(p_log_path ? p_log_path : "", p_vid_in_start, p_vid_in_skip, p_cca_roi_max2, tracking_data);
     Logger_kNN log_kNN(p_log_path ? p_log_path : "", p_vid_in_start, p_cca_roi_max2);
     Logger_tracks log_trk(p_log_path ? p_log_path : "", p_vid_in_start, tracking_data);
+    
+    // Processing modules allocation
+    Sigma_delta sd0(i0, i1, j0, j1, sd_data0, p_sd_n);
 
     std::unique_ptr<Visu> visu;
     if (p_vid_out_play || p_vid_out_path) {
@@ -396,7 +400,10 @@ int main(int argc, char** argv) {
         if (n_processed_frames > 0) {
             // step 1: motion detection (per pixel) with Sigma-Delta algorithm
             TIME_POINT(sd_b);
-            sigma_delta_compute(sd_data0, (const uint8_t**)IG0, IB0, i0, i1, j0, j1, p_sd_n);
+            // sigma_delta_compute(sd_data0, (const uint8_t**)IG0, IB0, i0, i1, j0, j1, p_sd_n);
+            sd0["compute::in_img"].bind(IG0[0]);
+            sd0["compute::out_img"].bind(IB0[0]); // this line can be removed
+            sd0("compute").exec();
             TIME_POINT(sd_e);
             TIME_ACC(sd_a, sd_b, sd_e);
 
