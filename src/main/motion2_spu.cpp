@@ -32,6 +32,7 @@
 #include "motion/wrapper/Logger_tracks.hpp"
 #include "motion/wrapper/Visu.hpp"
 #include "motion/wrapper/Sigma_delta.hpp"
+#include "motion/wrapper/Morpho.hpp"
 
 
 int main(int argc, char** argv) {
@@ -310,6 +311,7 @@ int main(int argc, char** argv) {
     
     // Processing modules allocation
     Sigma_delta sd0(i0, i1, j0, j1, sd_data0, p_sd_n);
+    Morpho morpho0(i0, i1, j0, j1, morpho_data0);
 
     std::unique_ptr<Visu> visu;
     if (p_vid_out_play || p_vid_out_path) {
@@ -409,8 +411,11 @@ int main(int argc, char** argv) {
 
             // step 2: mathematical morphology
             TIME_POINT(mrp_b);
-            morpho_compute_opening3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
-            morpho_compute_closing3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
+            //morpho_compute_opening3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
+            //morpho_compute_closing3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
+            morpho0["compute::in_img"].bind(IB0[0]);
+            morpho0["compute::out_img"].bind(IB0[0]); // this line can be removed
+            morpho0("compute").exec();
             TIME_POINT(mrp_e);
             TIME_ACC(mrp_a, mrp_b, mrp_e);
 

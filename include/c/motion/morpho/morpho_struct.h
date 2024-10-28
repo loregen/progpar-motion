@@ -4,6 +4,7 @@
  */
 
 #pragma once
+#include <stdint.h>
 
 /**
  *  Inner data required to perform morphology.
