@@ -33,6 +33,7 @@
 #include "motion/wrapper/Visu.hpp"
 #include "motion/wrapper/Sigma_delta.hpp"
 #include "motion/wrapper/Morpho.hpp"
+#include "motion/wrapper/CCL.hpp"
 
 
 int main(int argc, char** argv) {
@@ -312,6 +313,7 @@ int main(int argc, char** argv) {
     // Processing modules allocation
     Sigma_delta sd0(i0, i1, j0, j1, sd_data0, p_sd_n);
     Morpho morpho0(i0, i1, j0, j1, morpho_data0);
+    CCL ccl0(i0, i1, j0, j1, ccl_data0, 0);
 
     std::unique_ptr<Visu> visu;
     if (p_vid_out_play || p_vid_out_path) {
@@ -421,7 +423,12 @@ int main(int argc, char** argv) {
 
             // step 3: connected components labeling (CCL)
             TIME_POINT(ccl_b);
-            const uint32_t n_RoIs_tmp0 = CCL_LSL_apply(ccl_data0, (const uint8_t**)IB0, L10, 0);
+            //const uint32_t n_RoIs_tmp0 = CCL_LSL_apply(ccl_data0, (const uint8_t**)IB0, L10, 0);
+            uint32_t n_RoIs_tmp0 = 0;
+            ccl0["apply::in_img"].bind(IB0[0]);
+            ccl0["apply::out_labels"].bind(L10[0]);
+            ccl0["apply::out_RoIs"].bind(&n_RoIs_tmp0);
+            ccl0("apply").exec();
             assert(n_RoIs_tmp0 <= (uint32_t)def_p_cca_roi_max1);
             TIME_POINT(ccl_e);
             TIME_ACC(ccl_a, ccl_b, ccl_e);
@@ -618,10 +625,10 @@ int main(int argc, char** argv) {
     // -- FREE -- //
     // ---------- //
 
-    sigma_delta_free_data(sd_data0);
+    /*sigma_delta_free_data(sd_data0);
     sigma_delta_free_data(sd_data1);
     morpho_free_data(morpho_data0);
-    morpho_free_data(morpho_data1);
+    morpho_free_data(morpho_data1);*/
     free_ui8matrix(IG0, i0, i1, j0, j1);
     free_ui8matrix(IG1, i0, i1, j0, j1);
     free_ui8matrix(IB0, i0, i1, j0, j1);
@@ -636,8 +643,8 @@ int main(int argc, char** argv) {
     features_free_RoIs(RoIs_tmp1);
     features_free_RoIs(RoIs0);
     features_free_RoIs(RoIs1);
-    CCL_LSL_free_data(ccl_data0);
-    CCL_LSL_free_data(ccl_data1);
+    /*CCL_LSL_free_data(ccl_data0);
+    CCL_LSL_free_data(ccl_data1);*/
     kNN_free_data(knn_data);
     tracking_free_data(tracking_data);
 
