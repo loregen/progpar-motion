@@ -34,6 +34,7 @@
 #include "motion/wrapper/Sigma_delta.hpp"
 #include "motion/wrapper/Morpho.hpp"
 #include "motion/wrapper/CCL.hpp"
+#include "motion/wrapper/Features_CCA.hpp"
 
 
 int main(int argc, char** argv) {
@@ -314,6 +315,7 @@ int main(int argc, char** argv) {
     Sigma_delta sd0(i0, i1, j0, j1, sd_data0, p_sd_n);
     Morpho morpho0(i0, i1, j0, j1, morpho_data0);
     CCL ccl0(i0, i1, j0, j1, ccl_data0, 0);
+    CCA cca0(i0, i1, j0, j1, p_cca_roi_max1);
 
     std::unique_ptr<Visu> visu;
     if (p_vid_out_play || p_vid_out_path) {
@@ -427,7 +429,7 @@ int main(int argc, char** argv) {
             uint32_t n_RoIs_tmp0 = 0;
             ccl0["apply::in_img"].bind(IB0[0]);
             ccl0["apply::out_labels"].bind(L10[0]);
-            ccl0["apply::out_RoIs"].bind(&n_RoIs_tmp0);
+            ccl0["apply::out_n_RoIs"].bind(&n_RoIs_tmp0);
             ccl0("apply").exec();
             assert(n_RoIs_tmp0 <= (uint32_t)def_p_cca_roi_max1);
             TIME_POINT(ccl_e);
@@ -435,7 +437,11 @@ int main(int argc, char** argv) {
 
             // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
             TIME_POINT(cca_b);
-            features_extract((const uint32_t**)L10, i0, i1, j0, j1, RoIs_tmp0, n_RoIs_tmp0);
+            //features_extract((const uint32_t**)L10, i0, i1, j0, j1, RoIs_tmp0, n_RoIs_tmp0);
+            cca0["extract::in_labels"].bind(L10[0]);
+            cca0["extract::in_n_RoIs"].bind(&n_RoIs_tmp0);
+            cca0["extract::out_RoIs"].bind((uint8_t*)RoIs_tmp0);
+            cca0("extract").exec();
             TIME_POINT(cca_e);
             TIME_ACC(cca_a, cca_b, cca_e);
 

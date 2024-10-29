@@ -1,6 +1,6 @@
 /*!
  * \file
- * \brief C++ wrapper for connected components labelin algorithm.
+ * \brief C++ wrapper for connected components labelling algorithm.
  */
 
 #pragma once
