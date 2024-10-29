@@ -35,6 +35,7 @@
 #include "motion/wrapper/Morpho.hpp"
 #include "motion/wrapper/CCL.hpp"
 #include "motion/wrapper/Features_CCA.hpp"
+#include "motion/wrapper/Features_filter.hpp"
 
 
 int main(int argc, char** argv) {
@@ -316,6 +317,7 @@ int main(int argc, char** argv) {
     Morpho morpho0(i0, i1, j0, j1, morpho_data0);
     CCL ccl0(i0, i1, j0, j1, ccl_data0, 0);
     CCA cca0(i0, i1, j0, j1, p_cca_roi_max1);
+    Features_filter features0(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
 
     std::unique_ptr<Visu> visu;
     if (p_vid_out_play || p_vid_out_path) {
@@ -447,11 +449,17 @@ int main(int argc, char** argv) {
 
             // step 5: surface filtering (rm too small and too big RoIs)
             TIME_POINT(flt_b);
-            n_RoIs0 = features_filter_surface((const uint32_t**)L10, L20, i0, i1, j0, j1, RoIs_tmp0, n_RoIs_tmp0,
+            /*n_RoIs0 = features_filter_surface((const uint32_t**)L10, L20, i0, i1, j0, j1, RoIs_tmp0, n_RoIs_tmp0,
                                               p_flt_s_min, p_flt_s_max);
             assert(n_RoIs0 <= (uint32_t)p_cca_roi_max2);
             // features_labels_zero_init(RoIs_tmp->basic, L1);
-            features_shrink_basic(RoIs_tmp0, n_RoIs_tmp0, RoIs0);
+            features_shrink_basic(RoIs_tmp0, n_RoIs_tmp0, RoIs0);*/
+            features0["filter::in_labels"].bind(L10[0]);
+            features0["filter::out_RoIs_tmp"].bind((uint8_t*)RoIs_tmp0);
+            features0["filter::in_n_RoIs"].bind(&n_RoIs_tmp0);
+            features0["filter::out_RoIs"].bind((uint8_t*)RoIs0);
+            features0["filter::out_labels"].bind(L20[0]);
+            features0("filter").exec();
             TIME_POINT(flt_e);
             TIME_ACC(flt_a, flt_b, flt_e);
         }
