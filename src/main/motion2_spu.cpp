@@ -37,6 +37,7 @@
 #include "motion/wrapper/Features_CCA.hpp"
 #include "motion/wrapper/Features_filter.hpp"
 #include "motion/wrapper/kNN.hpp"
+#include "motion/wrapper/Tracking.hpp"
 
 
 int main(int argc, char** argv) {
@@ -314,12 +315,11 @@ int main(int argc, char** argv) {
     Logger_tracks log_trk(p_log_path ? p_log_path : "", p_vid_in_start, tracking_data);
     
     // Processing modules allocation
-    Sigma_delta sd0(i0, i1, j0, j1, sd_data0, p_sd_n);
+    Sigma_delta sd0(i0, i1, j0, j1, sd_data0, p_sd_n), sd1(i0, i1, j0, j1, sd_data1, p_sd_n);
     Morpho morpho0(i0, i1, j0, j1, morpho_data0);
     CCL ccl0(i0, i1, j0, j1, ccl_data0, 0);
     CCA cca0(i0, i1, j0, j1, p_cca_roi_max1);
     Features_filter features0(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
-    //kNN knn(knn_data, p_cca_roi_max1, p_cca_roi_max1, p_knn_k, p_knn_d, p_knn_s);
 
     std::unique_ptr<Visu> visu;
     if (p_vid_out_play || p_vid_out_path) {
@@ -473,37 +473,59 @@ int main(int argc, char** argv) {
 
         // step 1: motion detection (per pixel) with Sigma-Delta algorithm
         TIME_POINT(sd_b);
-        sigma_delta_compute(sd_data1, (const uint8_t**)IG1, IB1, i0, i1, j0, j1, p_sd_n);
+        // sigma_delta_compute(sd_data1, (const uint8_t**)IG1, IB1, i0, i1, j0, j1, p_sd_n);
+        sd1["compute::in_img"].bind(IG1[0]);
+        sd1["compute::out_img"].bind(IB1[0]);
+        sd1("compute").exec();
         TIME_POINT(sd_e);
         TIME_ACC(sd_a, sd_b, sd_e);
 
         // step 2: mathematical morphology
         TIME_POINT(mrp_b);
-        morpho_compute_opening3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
-        morpho_compute_closing3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
+        // morpho_compute_opening3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
+        // morpho_compute_closing3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
+        morpho0["compute::in_img"].bind(IB1[0]);
+        morpho0["compute::out_img"].bind(IB1[0]);
+        morpho0("compute").exec();
         TIME_POINT(mrp_e);
         TIME_ACC(mrp_a, mrp_b, mrp_e);
 
         // step 3: connected components labeling (CCL)
         TIME_POINT(ccl_b);
-        const uint32_t n_RoIs_tmp1 = CCL_LSL_apply(ccl_data1, (const uint8_t**)IB1, L11, 0);
+        // const uint32_t n_RoIs_tmp1 = CCL_LSL_apply(ccl_data1, (const uint8_t**)IB1, L11, 0);
+        uint32_t n_RoIs_tmp1;
+        ccl0["apply::in_img"].bind(IB1[0]);
+        ccl0["apply::out_labels"].bind(L11[0]);
+        ccl0["apply::out_n_RoIs"].bind(&n_RoIs_tmp1);
+        ccl0("apply").exec();
         assert(n_RoIs_tmp1 <= (uint32_t)def_p_cca_roi_max1);
         TIME_POINT(ccl_e);
         TIME_ACC(ccl_a, ccl_b, ccl_e);
 
         // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
         TIME_POINT(cca_b);
-        features_extract((const uint32_t**)L11, i0, i1, j0, j1, RoIs_tmp1, n_RoIs_tmp1);
+        // features_extract((const uint32_t**)L11, i0, i1, j0, j1, RoIs_tmp1, n_RoIs_tmp1);
+        cca0["extract::in_labels"].bind(L11[0]);
+        cca0["extract::in_n_RoIs"].bind(&n_RoIs_tmp1);
+        cca0["extract::out_RoIs"].bind((uint8_t*)RoIs_tmp1);
+        cca0("extract").exec();
         TIME_POINT(cca_e);
         TIME_ACC(cca_a, cca_b, cca_e);
 
         // step 5: surface filtering (rm too small and too big RoIs)
         TIME_POINT(flt_b);
-        const uint32_t n_RoIs1 = features_filter_surface((const uint32_t**)L11, L21, i0, i1, j0, j1, RoIs_tmp1,
-                                                         n_RoIs_tmp1, p_flt_s_min, p_flt_s_max);
-        assert(n_RoIs1 <= (uint32_t)p_cca_roi_max2);
+        uint32_t n_RoIs1;
+        features0["filter::in_labels"].bind(L11[0]);
+        features0["filter::out_RoIs_tmp"].bind((uint8_t*)RoIs_tmp1);
+        features0["filter::in_n_RoIs"].bind(&n_RoIs_tmp1);
+        features0["filter::out_RoIs"].bind((uint8_t*)RoIs1);
+        features0["filter::out_n_RoIs"].bind(&n_RoIs1);
+        features0("filter").exec();
+        // const uint32_t n_RoIs1 = features_filter_surface((const uint32_t**)L11, L21, i0, i1, j0, j1, RoIs_tmp1,
+        //                                                  n_RoIs_tmp1, p_flt_s_min, p_flt_s_max);
+        // assert(n_RoIs1 <= (uint32_t)p_cca_roi_max2);
         // features_labels_zero_init(RoIs_tmp->basic, L1);
-        features_shrink_basic(RoIs_tmp1, n_RoIs_tmp1, RoIs1);
+        // features_shrink_basic(RoIs_tmp1, n_RoIs_tmp1, RoIs1);
         TIME_POINT(flt_e);
         TIME_ACC(flt_a, flt_b, flt_e);
 
@@ -513,7 +535,7 @@ int main(int argc, char** argv) {
 
         // step 6: k-NN matching (RoIs associations)
         TIME_POINT(knn_b);
-        kNN knn(knn_data, p_cca_roi_max1, p_cca_roi_max1, p_knn_k, p_knn_d, p_knn_s);
+        kNN knn(knn_data, n_RoIs0, n_RoIs1, p_knn_k, p_knn_d, p_knn_s);
         uint32_t n_assoc;
         //kNN_match(knn_data, RoIs0, n_RoIs0, RoIs1, n_RoIs1, p_knn_k, p_knn_d, p_knn_s);
         knn["match::out_RoIs0"].bind((uint8_t*)RoIs0);
@@ -525,8 +547,12 @@ int main(int argc, char** argv) {
 
         // step 7: temporal tracking
         TIME_POINT(trk_b);
-        tracking_perform(tracking_data, RoIs1, n_RoIs1, cur_fra, p_trk_ext_d, p_trk_obj_min,
-                         p_trk_roi_path != NULL || visu, p_trk_ext_o, p_knn_s);
+        // tracking_perform(tracking_data, RoIs1, n_RoIs1, cur_fra, p_trk_ext_d, p_trk_obj_min,
+        //                  p_trk_roi_path != NULL || visu, p_trk_ext_o, p_knn_s);
+        Tracking tracking(tracking_data, n_RoIs1, cur_fra, p_trk_ext_d, p_trk_obj_min, p_trk_roi_path != NULL || visu,
+                          p_trk_ext_o, p_knn_s);
+        tracking["perform::in_RoIs"].bind((uint8_t*)RoIs1);
+        tracking("perform").exec();
         TIME_POINT(trk_e);
         TIME_ACC(trk_a, trk_b, trk_e);
 
