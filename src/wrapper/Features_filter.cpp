@@ -1,7 +1,7 @@
 /* Module with StreamPU compute task that calls features_filter_surface
 and features_shrink_basic functions*/
 
-#include "motion/Features/Features_compute.h"
+#include "motion/features/features_compute.h"
 
 #include "motion/wrapper/Features_filter.hpp"
 
