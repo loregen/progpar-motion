@@ -1,6 +1,6 @@
 /* Module with StreamPU compute task that calls features_extract*/
 
-#include "motion/Features/Features_compute.h"
+#include "motion/features/features_compute.h"
 
 #include "motion/wrapper/Features_CCA.hpp"
 
