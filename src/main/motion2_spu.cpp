@@ -36,6 +36,7 @@
 #include "motion/wrapper/CCL.hpp"
 #include "motion/wrapper/Features_CCA.hpp"
 #include "motion/wrapper/Features_filter.hpp"
+#include "motion/wrapper/kNN.hpp"
 
 
 int main(int argc, char** argv) {
@@ -318,6 +319,7 @@ int main(int argc, char** argv) {
     CCL ccl0(i0, i1, j0, j1, ccl_data0, 0);
     CCA cca0(i0, i1, j0, j1, p_cca_roi_max1);
     Features_filter features0(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
+    //kNN knn(knn_data, p_cca_roi_max1, p_cca_roi_max1, p_knn_k, p_knn_d, p_knn_s);
 
     std::unique_ptr<Visu> visu;
     if (p_vid_out_play || p_vid_out_path) {
@@ -458,7 +460,8 @@ int main(int argc, char** argv) {
             features0["filter::out_RoIs_tmp"].bind((uint8_t*)RoIs_tmp0);
             features0["filter::in_n_RoIs"].bind(&n_RoIs_tmp0);
             features0["filter::out_RoIs"].bind((uint8_t*)RoIs0);
-            features0["filter::out_labels"].bind(L20[0]);
+            features0["filter::out_n_RoIs"].bind(&n_RoIs0);
+            //features0["filter::out_labels"].bind(L20[0]);
             features0("filter").exec();
             TIME_POINT(flt_e);
             TIME_ACC(flt_a, flt_b, flt_e);
@@ -510,7 +513,13 @@ int main(int argc, char** argv) {
 
         // step 6: k-NN matching (RoIs associations)
         TIME_POINT(knn_b);
-        kNN_match(knn_data, RoIs0, n_RoIs0, RoIs1, n_RoIs1, p_knn_k, p_knn_d, p_knn_s);
+        kNN knn(knn_data, p_cca_roi_max1, p_cca_roi_max1, p_knn_k, p_knn_d, p_knn_s);
+        uint32_t n_assoc;
+        //kNN_match(knn_data, RoIs0, n_RoIs0, RoIs1, n_RoIs1, p_knn_k, p_knn_d, p_knn_s);
+        knn["match::out_RoIs0"].bind((uint8_t*)RoIs0);
+        knn["match::out_RoIs1"].bind((uint8_t*)RoIs1);
+        knn["match::out_n_assoc"].bind(&n_assoc);
+        knn("match").exec();
         TIME_POINT(knn_e);
         TIME_ACC(knn_a, knn_b, knn_e);
 
