@@ -285,16 +285,16 @@ int main(int argc, char** argv) {
     // -- DATA ALLOCATION -- //
     // --------------------- //
 
-    sigma_delta_data_t* sd_data0 = sigma_delta_alloc_data(i0, i1, j0, j1, 1, 254);
-    sigma_delta_data_t* sd_data1 = sigma_delta_alloc_data(i0, i1, j0, j1, 1, 254);
-    morpho_data_t* morpho_data0 = morpho_alloc_data(i0, i1, j0, j1);
-    morpho_data_t* morpho_data1 = morpho_alloc_data(i0, i1, j0, j1);
+    // sigma_delta_data_t* sd_data0 = sigma_delta_alloc_data(i0, i1, j0, j1, 1, 254);
+    // sigma_delta_data_t* sd_data1 = sigma_delta_alloc_data(i0, i1, j0, j1, 1, 254);
+    // morpho_data_t* morpho_data0 = morpho_alloc_data(i0, i1, j0, j1);
+    // morpho_data_t* morpho_data1 = morpho_alloc_data(i0, i1, j0, j1);
     RoI_t* RoIs_tmp0 = features_alloc_RoIs(p_cca_roi_max1);
     RoI_t* RoIs0 = features_alloc_RoIs(p_cca_roi_max2);
     RoI_t* RoIs_tmp1 = features_alloc_RoIs(p_cca_roi_max1);
     RoI_t* RoIs1 = features_alloc_RoIs(p_cca_roi_max2);
-    CCL_data_t* ccl_data0 = CCL_LSL_alloc_data(i0, i1, j0, j1);
-    CCL_data_t* ccl_data1 = CCL_LSL_alloc_data(i0, i1, j0, j1);
+    // CCL_data_t* ccl_data0 = CCL_LSL_alloc_data(i0, i1, j0, j1);
+    // CCL_data_t* ccl_data1 = CCL_LSL_alloc_data(i0, i1, j0, j1);
     kNN_data_t* knn_data = kNN_alloc_data(p_cca_roi_max2);
     tracking_data_t* tracking_data = tracking_alloc_data(MAX(p_trk_obj_min, p_trk_ext_o) + 1, p_cca_roi_max2);
     uint8_t **IG0 = ui8matrix(i0, i1, j0, j1); // grayscale input image at t - 1
@@ -315,9 +315,9 @@ int main(int argc, char** argv) {
     Logger_tracks log_trk(p_log_path ? p_log_path : "", p_vid_in_start, tracking_data);
     
     // Processing modules allocation
-    Sigma_delta sd0(i0, i1, j0, j1, sd_data0, p_sd_n), sd1(i0, i1, j0, j1, sd_data1, p_sd_n);
-    Morpho morpho0(i0, i1, j0, j1, morpho_data0);
-    CCL ccl0(i0, i1, j0, j1, ccl_data0, 0);
+    Sigma_delta sd0(i0, i1, j0, j1, p_sd_n), sd1(i0, i1, j0, j1, p_sd_n);
+    Morpho morpho0(i0, i1, j0, j1), morpho1(i0, i1, j0, j1);
+    CCL ccl0(i0, i1, j0, j1, 0), ccl1(i0, i1, j0, j1, 0);
     CCA cca0(i0, i1, j0, j1, p_cca_roi_max1);
     Features_filter features0(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
 
@@ -338,8 +338,9 @@ int main(int argc, char** argv) {
     video["generate::out_frame"].bind(&cur_fra);
     video("generate").exec();
 
-    sigma_delta_init_data(sd_data0, (const uint8_t**)IG1, i0, i1, j0, j1);
-    sigma_delta_init_data(sd_data1, (const uint8_t**)IG1, i0, i1, j0, j1);
+    // sigma_delta_init_data(sd_data0, (const uint8_t**)IG1, i0, i1, j0, j1);
+    //sigma_delta_init_data(sd_data1, (const uint8_t**)IG1, i0, i1, j0, j1);
+    sd0.init_data((const uint8_t**)IG1), sd1.init_data((const uint8_t**)IG1);
 
     zero_ui8matrix(IG0, i0, i1, j0, j1);
     zero_ui8matrix(IG1, i0, i1, j0, j1);
@@ -351,10 +352,10 @@ int main(int argc, char** argv) {
         zero_ui32matrix(L20, i0, i1, j0, j1);
         zero_ui32matrix(L21, i0, i1, j0, j1);
     }
-    morpho_init_data(morpho_data0);
-    morpho_init_data(morpho_data1);
-    CCL_LSL_init_data(ccl_data0);
-    CCL_LSL_init_data(ccl_data1);
+    // morpho_init_data(morpho_data0);
+    // morpho_init_data(morpho_data1);
+    // CCL_LSL_init_data(ccl_data0);
+    // CCL_LSL_init_data(ccl_data1);
     features_init_RoIs(RoIs_tmp0, p_cca_roi_max1);
     features_init_RoIs(RoIs_tmp1, p_cca_roi_max1);
     features_init_RoIs(RoIs0, p_cca_roi_max2);
@@ -412,7 +413,7 @@ int main(int argc, char** argv) {
             TIME_POINT(sd_b);
             // sigma_delta_compute(sd_data0, (const uint8_t**)IG0, IB0, i0, i1, j0, j1, p_sd_n);
             sd0["compute::in_img"].bind(IG0[0]);
-            sd0["compute::out_img"].bind(IB0[0]); // this line can be removed
+            sd0["compute::out_img"].bind(IB0[0]);
             sd0("compute").exec();
             TIME_POINT(sd_e);
             TIME_ACC(sd_a, sd_b, sd_e);
@@ -422,8 +423,10 @@ int main(int argc, char** argv) {
             //morpho_compute_opening3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
             //morpho_compute_closing3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
             morpho0["compute::in_img"].bind(IB0[0]);
-            morpho0["compute::out_img"].bind(IB0[0]); // this line can be removed
+            //morpho0["compute::in_img"] = sd0["compute::out_img"];
+            morpho0["compute::out_img"].bind(IB0[0]);
             morpho0("compute").exec();
+
             TIME_POINT(mrp_e);
             TIME_ACC(mrp_a, mrp_b, mrp_e);
 
@@ -432,6 +435,7 @@ int main(int argc, char** argv) {
             //const uint32_t n_RoIs_tmp0 = CCL_LSL_apply(ccl_data0, (const uint8_t**)IB0, L10, 0);
             uint32_t n_RoIs_tmp0 = 0;
             ccl0["apply::in_img"].bind(IB0[0]);
+            //ccl0["apply::in_img"] = morpho0["compute::out_img"];
             ccl0["apply::out_labels"].bind(L10[0]);
             ccl0["apply::out_n_RoIs"].bind(&n_RoIs_tmp0);
             ccl0("apply").exec();
@@ -484,9 +488,9 @@ int main(int argc, char** argv) {
         TIME_POINT(mrp_b);
         // morpho_compute_opening3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
         // morpho_compute_closing3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
-        morpho0["compute::in_img"].bind(IB1[0]);
-        morpho0["compute::out_img"].bind(IB1[0]);
-        morpho0("compute").exec();
+        morpho1["compute::in_img"].bind(IB1[0]);
+        morpho1["compute::out_img"].bind(IB1[0]);
+        morpho1("compute").exec();
         TIME_POINT(mrp_e);
         TIME_ACC(mrp_a, mrp_b, mrp_e);
 
@@ -494,10 +498,10 @@ int main(int argc, char** argv) {
         TIME_POINT(ccl_b);
         // const uint32_t n_RoIs_tmp1 = CCL_LSL_apply(ccl_data1, (const uint8_t**)IB1, L11, 0);
         uint32_t n_RoIs_tmp1;
-        ccl0["apply::in_img"].bind(IB1[0]);
-        ccl0["apply::out_labels"].bind(L11[0]);
-        ccl0["apply::out_n_RoIs"].bind(&n_RoIs_tmp1);
-        ccl0("apply").exec();
+        ccl1["apply::in_img"].bind(IB1[0]);
+        ccl1["apply::out_labels"].bind(L11[0]);
+        ccl1["apply::out_n_RoIs"].bind(&n_RoIs_tmp1);
+        ccl1("apply").exec();
         assert(n_RoIs_tmp1 <= (uint32_t)def_p_cca_roi_max1);
         TIME_POINT(ccl_e);
         TIME_ACC(ccl_a, ccl_b, ccl_e);

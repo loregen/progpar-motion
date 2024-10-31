@@ -19,6 +19,6 @@ protected:
     CCL_data_t* ccl_data;
     uint8_t no_init_labels;
 public:
-    CCL(const int i0, const int i1, const int j0, const int j1, CCL_data_t* ccl_data, uint8_t no_init_labels);
+    CCL(const int i0, const int i1, const int j0, const int j1, uint8_t no_init_labels);
     virtual ~CCL();
 };
