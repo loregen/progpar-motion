@@ -413,7 +413,7 @@ int main(int argc, char** argv) {
             TIME_POINT(sd_b);
             // sigma_delta_compute(sd_data0, (const uint8_t**)IG0, IB0, i0, i1, j0, j1, p_sd_n);
             sd0["compute::in_img"].bind(IG0[0]);
-            sd0["compute::out_img"].bind(IB0[0]);
+            //sd0["compute::out_img"].bind(IB0[0]);
             sd0("compute").exec();
             TIME_POINT(sd_e);
             TIME_ACC(sd_a, sd_b, sd_e);
@@ -422,8 +422,8 @@ int main(int argc, char** argv) {
             TIME_POINT(mrp_b);
             //morpho_compute_opening3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
             //morpho_compute_closing3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
-            morpho0["compute::in_img"].bind(IB0[0]);
-            //morpho0["compute::in_img"] = sd0["compute::out_img"];
+            //morpho0["compute::in_img"].bind(IB0[0]);
+            morpho0["compute::in_img"] = sd0["compute::out_img"];
             morpho0["compute::out_img"].bind(IB0[0]);
             morpho0("compute").exec();
 
