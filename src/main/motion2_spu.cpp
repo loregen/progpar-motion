@@ -36,7 +36,7 @@
 #include "motion/wrapper/CCL.hpp"
 #include "motion/wrapper/Features_CCA.hpp"
 #include "motion/wrapper/Features_filter.hpp"
-#include "motion/wrapper/kNN.hpp"
+#include "motion/wrapper/KNN.hpp"
 #include "motion/wrapper/Tracking.hpp"
 
 
@@ -420,22 +420,26 @@ int main(int argc, char** argv) {
 
             // step 2: mathematical morphology
             TIME_POINT(mrp_b);
-            //morpho_compute_opening3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
-            //morpho_compute_closing3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
-            //morpho0["compute::in_img"].bind(IB0[0]);
+            /*
+                Old code for reference
+                morpho_compute_opening3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
+                morpho_compute_closing3(morpho_data0, (const uint8_t**)IB0, IB0, i0, i1, j0, j1);
+                morpho0["compute::in_img"].bind(IB0[0]);
+            */
             morpho0["compute::in_img"] = sd0["compute::out_img"];
-            morpho0["compute::out_img"].bind(IB0[0]);
             morpho0("compute").exec();
 
             TIME_POINT(mrp_e);
             TIME_ACC(mrp_a, mrp_b, mrp_e);
 
             // step 3: connected components labeling (CCL)
+            /*
+                const uint32_t n_RoIs_tmp0 = CCL_LSL_apply(ccl_data0, (const uint8_t**)IB0, L10, 0);
+                ccl0["apply::in_img"].bind(IB0[0]);
+            */
             TIME_POINT(ccl_b);
-            //const uint32_t n_RoIs_tmp0 = CCL_LSL_apply(ccl_data0, (const uint8_t**)IB0, L10, 0);
             uint32_t n_RoIs_tmp0 = 0;
-            ccl0["apply::in_img"].bind(IB0[0]);
-            //ccl0["apply::in_img"] = morpho0["compute::out_img"];
+            ccl0["apply::in_img"] = morpho0["compute::out_img"];
             ccl0["apply::out_labels"].bind(L10[0]);
             ccl0["apply::out_n_RoIs"].bind(&n_RoIs_tmp0);
             ccl0("apply").exec();
@@ -447,8 +451,10 @@ int main(int argc, char** argv) {
             TIME_POINT(cca_b);
             //features_extract((const uint32_t**)L10, i0, i1, j0, j1, RoIs_tmp0, n_RoIs_tmp0);
             cca0["extract::in_labels"].bind(L10[0]);
+            // cca0["extract::in_labels"]= ccl0["apply::out_labels"];
             cca0["extract::in_n_RoIs"].bind(&n_RoIs_tmp0);
             cca0["extract::out_RoIs"].bind((uint8_t*)RoIs_tmp0);
+            // cca0["extract::out_RoIs"].bind((uint8_t*)RoIs_tmp0);
             cca0("extract").exec();
             TIME_POINT(cca_e);
             TIME_ACC(cca_a, cca_b, cca_e);
@@ -460,6 +466,7 @@ int main(int argc, char** argv) {
             assert(n_RoIs0 <= (uint32_t)p_cca_roi_max2);
             // features_labels_zero_init(RoIs_tmp->basic, L1);
             features_shrink_basic(RoIs_tmp0, n_RoIs_tmp0, RoIs0);*/
+            // features0["filter::in_labels"].bind(L10[0]);
             features0["filter::in_labels"].bind(L10[0]);
             features0["filter::out_RoIs_tmp"].bind((uint8_t*)RoIs_tmp0);
             features0["filter::in_n_RoIs"].bind(&n_RoIs_tmp0);
@@ -479,7 +486,6 @@ int main(int argc, char** argv) {
         TIME_POINT(sd_b);
         // sigma_delta_compute(sd_data1, (const uint8_t**)IG1, IB1, i0, i1, j0, j1, p_sd_n);
         sd1["compute::in_img"].bind(IG1[0]);
-        sd1["compute::out_img"].bind(IB1[0]);
         sd1("compute").exec();
         TIME_POINT(sd_e);
         TIME_ACC(sd_a, sd_b, sd_e);
@@ -488,8 +494,7 @@ int main(int argc, char** argv) {
         TIME_POINT(mrp_b);
         // morpho_compute_opening3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
         // morpho_compute_closing3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
-        morpho1["compute::in_img"].bind(IB1[0]);
-        morpho1["compute::out_img"].bind(IB1[0]);
+        morpho1["compute::in_img"]= sd1["compute::out_img"];
         morpho1("compute").exec();
         TIME_POINT(mrp_e);
         TIME_ACC(mrp_a, mrp_b, mrp_e);
@@ -498,7 +503,8 @@ int main(int argc, char** argv) {
         TIME_POINT(ccl_b);
         // const uint32_t n_RoIs_tmp1 = CCL_LSL_apply(ccl_data1, (const uint8_t**)IB1, L11, 0);
         uint32_t n_RoIs_tmp1;
-        ccl1["apply::in_img"].bind(IB1[0]);
+        // ccl1["apply::in_img"].bind(IB1[0]);
+        ccl1["apply::in_img"] = morpho1["compute::out_img"];
         ccl1["apply::out_labels"].bind(L11[0]);
         ccl1["apply::out_n_RoIs"].bind(&n_RoIs_tmp1);
         ccl1("apply").exec();
