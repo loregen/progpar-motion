@@ -460,7 +460,6 @@ int main(int argc, char** argv) {
 
         // step 1: motion detection (per pixel) with Sigma-Delta algorithm
         TIME_POINT(sd_b);
-        // sigma_delta_compute(sd_data1, (const uint8_t**)IG1, IB1, i0, i1, j0, j1, p_sd_n);
         sd1["compute::in_img"].bind(IG1[0]);
         sd1("compute").exec();
         TIME_POINT(sd_e);
@@ -468,8 +467,6 @@ int main(int argc, char** argv) {
 
         // step 2: mathematical morphology
         TIME_POINT(mrp_b);
-        // morpho_compute_opening3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
-        // morpho_compute_closing3(morpho_data1, (const uint8_t**)IB1, IB1, i0, i1, j0, j1);
         morpho1["compute::in_img"]= sd1["compute::out_img"];
         morpho1("compute").exec();
         TIME_POINT(mrp_e);
@@ -477,12 +474,9 @@ int main(int argc, char** argv) {
 
         // step 3: connected components labeling (CCL)
         TIME_POINT(ccl_b);
-        // const uint32_t n_RoIs_tmp1 = CCL_LSL_apply(ccl_data1, (const uint8_t**)IB1, L11, 0);
         uint32_t n_RoIs_tmp1;
-        // ccl1["apply::in_img"].bind(IB1[0]);
         ccl1["apply::in_img"] = morpho1["compute::out_img"];
-        // ccl1["apply::out_labels"].bind(L11[0]);
-        ccl1["apply::out_n_RoIs"].bind(&n_RoIs_tmp1);
+        // ccl1["apply::out_n_RoIs"].bind(&n_RoIs_tmp1);
         ccl1("apply").exec();
         assert(n_RoIs_tmp1 <= (uint32_t)def_p_cca_roi_max1);
         TIME_POINT(ccl_e);
@@ -490,10 +484,8 @@ int main(int argc, char** argv) {
 
         // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
         TIME_POINT(cca_b);
-        // features_extract((const uint32_t**)L11, i0, i1, j0, j1, RoIs_tmp1, n_RoIs_tmp1);
-        // cca1["extract::in_labels"].bind(L11[0]);
         cca1["extract::in_labels"]= ccl1["apply::out_labels"];
-        cca1["extract::in_n_RoIs"].bind(&n_RoIs_tmp1);
+        cca1["extract::in_n_RoIs"]= ccl1["apply::out_n_RoIs"];
         cca1["extract::out_RoIs"].bind((uint8_t*)RoIs_tmp1);
         cca1("extract").exec();
         TIME_POINT(cca_e);
@@ -502,18 +494,12 @@ int main(int argc, char** argv) {
         // step 5: surface filtering (rm too small and too big RoIs)
         TIME_POINT(flt_b);
         uint32_t n_RoIs1;
-        // features1["filter::in_labels"].bind(L11[0]);
         features1["filter::in_labels"]= ccl1["apply::out_labels"];
+        features1["filter::in_n_RoIs"] = ccl1["apply::out_n_RoIs"];
         features1["filter::out_RoIs_tmp"].bind((uint8_t*)RoIs_tmp1);
-        features1["filter::in_n_RoIs"].bind(&n_RoIs_tmp1);
         features1["filter::out_RoIs"].bind((uint8_t*)RoIs1);
         features1["filter::out_n_RoIs"].bind(&n_RoIs1);
         features1("filter").exec();
-        // const uint32_t n_RoIs1 = features_filter_surface((const uint32_t**)L11, L21, i0, i1, j0, j1, RoIs_tmp1,
-        //                                                  n_RoIs_tmp1, p_flt_s_min, p_flt_s_max);
-        // assert(n_RoIs1 <= (uint32_t)p_cca_roi_max2);
-        // features_labels_zero_init(RoIs_tmp->basic, L1);
-        // features_shrink_basic(RoIs_tmp1, n_RoIs_tmp1, RoIs1);
         TIME_POINT(flt_e);
         TIME_ACC(flt_a, flt_b, flt_e);
 
