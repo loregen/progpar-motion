@@ -1,11 +1,69 @@
 /*
-Name:
-Group:
+Name: Pierpaolo Marzo
+Group: Lorenzo Gentile, Erik Fabrizzi
 */
 
 /*
-    TASK 7
-    
+TASK 7
+
+//Results on a i7 8750H compiled with gcc (Ubuntu 13.2.0-23ubuntu4) 13.2.0
+
+##Dataflow model##
+
+# -------------------------------------------||------------------------------||--------------------------------
+#        Statistics for the given task       ||       Basic statistics       ||        Measured latency
+#     ('*' = any, '-' = same as previous)    ||          on the task         ||
+# -------------------------------------------||------------------------------||--------------------------------
+# -------------|-------------------|---------||----------|----------|--------||----------|----------|----------
+#       MODULE |              TASK |   TIMER ||    CALLS |     TIME |   PERC ||  AVERAGE |  MINIMUM |  MAXIMUM
+#              |                   |         ||          |      (s) |    (%) ||     (us) |     (us) |     (us)
+# -------------|-------------------|---------||----------|----------|--------||----------|----------|----------
+#  Sigma_delta |           compute |       * ||       21 |     0.41 |  22.61 || 19507.11 | 11758.35 | 32104.87
+#  Sigma_delta |           compute |       * ||       20 |     0.39 |  21.78 || 19735.81 | 18381.48 | 21929.34
+#       Morpho |           compute |       * ||       21 |     0.35 |  19.19 || 16562.93 | 16136.94 | 18453.12
+#       Morpho |           compute |       * ||       20 |     0.33 |  18.43 || 16694.56 | 16070.32 | 18768.57
+#          CCL |             apply |       * ||       21 |     0.07 |   4.11 ||  3546.07 |  2211.35 |  4312.85
+#          CCL |             apply |       * ||       20 |     0.07 |   3.81 ||  3452.88 |  3045.27 |  4214.29
+#          CCA |           extract |       * ||       21 |     0.05 |   2.62 ||  2260.15 |  1177.74 |  2859.60
+#          CCA |           extract |       * ||       20 |     0.04 |   2.47 ||  2237.74 |  1888.54 |  2849.49
+#        Video |          generate |       * ||       21 |     0.02 |   1.36 ||  1171.06 |     0.00 |  1654.24
+# Features_filter |            filter |       * ||       21 |     0.02 |   1.15 ||   991.50 |   346.36 |  1779.69
+# Features_filter |            filter |       * ||       20 |     0.02 |   1.07 ||   969.24 |   740.81 |  1575.58
+#  Logger_RoIs |             write |       * ||       20 |     0.01 |   0.71 ||   646.49 |   157.91 |  2507.20
+#      Delayer |          memorize |       * ||       20 |     0.00 |   0.28 ||   249.35 |   206.79 |   424.30
+#      Delayer |           produce |       * ||       21 |     0.00 |   0.27 ||   233.53 |   167.76 |   481.54
+# Logger_tracks |             write |       * ||       20 |     0.00 |   0.07 ||    62.23 |     8.59 |   269.59
+#   Logger_kNN |             write |       * ||       20 |     0.00 |   0.05 ||    48.77 |    30.23 |   102.94
+#          kNN |             match |       * ||       20 |     0.00 |   0.02 ||    14.56 |     5.56 |    24.17
+#     Tracking |           perform |       * ||       20 |     0.00 |   0.01 ||     6.50 |     3.64 |    15.06
+# -------------|-------------------|---------||----------|----------|--------||----------|----------|----------
+#        TOTAL |                 * |       * ||       20 |     1.81 | 100.00 || 90604.12 | 73927.56 | 1.17e+05
+
+
+
+##Straightforward version##
+
+# Average latencies:
+# -> Video decoding =    1.116 ms
+# -> Sigma-Delta    =   36.653 ms
+# -> Morphology     =   33.098 ms
+# -> CC Labeling    =    6.566 ms
+# -> CC Analysis    =    4.287 ms
+# -> Filtering      =    0.012 ms
+# -> k-NN           =    0.013 ms
+# -> Tracking       =    0.004 ms
+# -> Logs         =    0.458 ms
+# -> Visu         =    0.000 ms
+# => Total          =   82.209 ms [~12.16 FPS]
+
+The difference in terms of statistics of the dataflow model and the straightforward version is negligible and depends on
+the machine on which the code is executed and the compiler used.
+In fact it results to be faster if compiled with clang and executed on a M1 chip, while it results to be slower in the shown setup.
+This different behaviour may be due to the different optimization levels of the compilers and the different architectures of the CPUs,
+which in some cases may lead to a better performance of the dataflow model and in other cases to a better performance of the straightforward version.
+In general, the dataflow model should be faster than the straightforward version, because it allows to execute tasks in parallel and to exploit the
+parallelism of the CPU, while the straightforward version executes tasks sequentially.
+Though, in case of a small number of tasks, the overhead of the dataflow model may be higher than the benefits of the parallelism, leading to a slower execution.
 */
 
 
