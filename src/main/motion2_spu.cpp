@@ -409,7 +409,7 @@ int main(int argc, char** argv) {
         (*visu)["display::in_frame"] = video["generate::out_frame"];
         (*visu)["display::in_img"] = video["generate::out_img_gray8"];
         (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
-        (*visu)["display::in_n_RoIs"] = features1["filter::out_n_RoIs"];
+        (*visu)["display::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
         (*visu)("display").exec();
     }
 
@@ -432,19 +432,19 @@ int main(int argc, char** argv) {
     sd0["compute::in_img"] = delayer["produce::out"];
 
     // step 2: mathematical morphology
-    morpho0["compute::in_img"] = sd0["compute::out_img"];
+    morpho0["computef::f_img"] = sd0["compute::out_img"];
 
     // step 3: connected components labeling (CCL)
-    ccl0["apply::in_img"] = morpho0["compute::out_img"];
+    ccl0["apply::in_img"] = morpho0["computef::f_img"];
 
     // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
     cca0["extract::in_labels"]= ccl0["apply::out_labels"];
     cca0["extract::in_n_RoIs"]= ccl0["apply::out_n_RoIs"];
 
     // step 5: surface filtering (rm too small and too big RoIs)
-    features0["filter::in_labels"] = ccl0["apply::out_labels"];
-    features0["filter::in_n_RoIs"] = ccl0["apply::out_n_RoIs"];
-    features0["filter::in_RoIs"]   = cca0["extract::out_RoIs"];
+    features0["filterf::fwd_labels"] = ccl0["apply::out_labels"];
+    features0["filterf::in_n_RoIs"] = ccl0["apply::out_n_RoIs"];
+    features0["filterf::in_RoIs"]   = cca0["extract::out_RoIs"];
     
     // --------------------- //
     // -- Processing at t -- //
@@ -454,19 +454,19 @@ int main(int argc, char** argv) {
     sd1["compute::in_img"] = video["generate::out_img_gray8"];
 
     // step 2: mathematical morphology
-    morpho1["compute::in_img"]= sd1["compute::out_img"];
+    morpho1["computef::f_img"]= sd1["compute::out_img"];
 
     // step 3: connected components labeling (CCL)
-    ccl1["apply::in_img"] = morpho1["compute::out_img"];
+    ccl1["apply::in_img"] = morpho1["computef::f_img"];
 
     // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
     cca1["extract::in_labels"]= ccl1["apply::out_labels"];
     cca1["extract::in_n_RoIs"]= ccl1["apply::out_n_RoIs"];
 
     // step 5: surface filtering (rm too small and too big RoIs)
-    features1["filter::in_labels"] = ccl1["apply::out_labels"];
-    features1["filter::in_n_RoIs"] = ccl1["apply::out_n_RoIs"];
-    features1["filter::in_RoIs"]   = cca1["extract::out_RoIs"];
+    features1["filterf::fwd_labels"] = ccl1["apply::out_labels"];
+    features1["filterf::in_n_RoIs"] = ccl1["apply::out_n_RoIs"];
+    features1["filterf::in_RoIs"]   = cca1["extract::out_RoIs"];
 
     delayer["memorize::in"] = video["generate::out_img_gray8"];
 
@@ -475,14 +475,14 @@ int main(int argc, char** argv) {
     // ----------------------------- //
 
     // step 6: k-NN matching (RoIs associations)
-    knn["match::in_RoIs0"] = features0["filter::out_RoIs"];
-    knn["match::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
-    knn["match::in_RoIs1"] = features1["filter::out_RoIs"];
-    knn["match::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
+    knn["match::in_RoIs0"] =   features0["filterf::out_RoIs"];
+    knn["match::in_n_RoIs0"] = features0["filterf::out_n_RoIs"];
+    knn["match::in_RoIs1"] =   features1["filterf::out_RoIs"];
+    knn["match::in_n_RoIs1"] = features1["filterf::out_n_RoIs"];
 
     // step 7: temporal tracking
     tracking["perform::in_RoIs"] = knn["match::out_RoIs1"];
-    tracking["perform::in_n_RoIs"] = features1["filter::out_n_RoIs"];
+    tracking["perform::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
     tracking["perform::in_frame"] = video["generate::out_frame"];
 
     // ---------- //
@@ -492,17 +492,17 @@ int main(int argc, char** argv) {
     // TIME_POINT(log_b);
     // save frames (CCs)
     if (p_ccl_fra_path) {
-        (*log_fra)["write::in_labels"] = features1["filter::out_labels"];
+        (*log_fra)["write::in_labels"] = features1["filterf::fwd_labels"];
         (*log_fra)["write::in_RoIs"] = knn["match::out_RoIs1"];
-        (*log_fra)["write::in_n_RoIs"] = features1["filter::out_n_RoIs"];
+        (*log_fra)["write::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
     }
 
     // save stats
     if (p_log_path) {
         log_RoIs["write::in_RoIs0"] = knn["match::out_RoIs0"];
-        log_RoIs["write::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
+        log_RoIs["write::in_n_RoIs0"] = features0["filterf::out_n_RoIs"];
         log_RoIs["write::in_RoIs1"] = knn["match::out_RoIs1"];
-        log_RoIs["write::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
+        log_RoIs["write::in_n_RoIs1"] = features1["filterf::out_n_RoIs"];
         log_RoIs["write::in_frame"] = video["generate::out_frame"];
 
             //if (cur_fra > (uint32_t)p_vid_in_start) {
@@ -512,9 +512,9 @@ int main(int argc, char** argv) {
                 log_kNN["write::in_conflicts"].bind(knn_data->conflicts);
 #endif
                 log_kNN["write::in_RoIs0"] = knn["match::out_RoIs0"];
-                log_kNN["write::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
+                log_kNN["write::in_n_RoIs0"] = features0["filterf::out_n_RoIs"];
                 log_kNN["write::in_RoIs1"] = knn["match::out_RoIs1"];
-                log_kNN["write::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
+                log_kNN["write::in_n_RoIs1"] = features1["filterf::out_n_RoIs"];
                 log_kNN["write::in_frame"] = video["generate::out_frame"];
 
                 log_trk["write::in_frame"] = video["generate::out_frame"];
@@ -525,7 +525,7 @@ int main(int argc, char** argv) {
             (*visu)["display::in_frame"] = video["generate::out_frame"];
             (*visu)["display::in_img"] = video["generate::out_img_gray8"];
             (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
-            (*visu)["display::in_n_RoIs"] = features1["filter::out_n_RoIs"];
+            (*visu)["display::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
         }
 
     std::vector<spu::runtime::Task*> init_tasks = {&delayer("produce"), &video("generate")};
