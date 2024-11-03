@@ -285,31 +285,12 @@ int main(int argc, char** argv) {
     // -- DATA ALLOCATION -- //
     // --------------------- //
 
-    // sigma_delta_data_t* sd_data0 = sigma_delta_alloc_data(i0, i1, j0, j1, 1, 254);
-    // sigma_delta_data_t* sd_data1 = sigma_delta_alloc_data(i0, i1, j0, j1, 1, 254);
-    // morpho_data_t* morpho_data0 = morpho_alloc_data(i0, i1, j0, j1);
-    // morpho_data_t* morpho_data1 = morpho_alloc_data(i0, i1, j0, j1);
     RoI_t* RoIs_tmp0 = features_alloc_RoIs(p_cca_roi_max1);
-    // RoI_t* RoIs0 = features_alloc_RoIs(p_cca_roi_max2);
     RoI_t* RoIs_tmp1 = features_alloc_RoIs(p_cca_roi_max1);
-    // RoI_t* RoIs1 = features_alloc_RoIs(p_cca_roi_max2);
-    // CCL_data_t* ccl_data0 = CCL_LSL_alloc_data(i0, i1, j0, j1);
-    // CCL_data_t* ccl_data1 = CCL_LSL_alloc_data(i0, i1, j0, j1);
     kNN_data_t* knn_data = kNN_alloc_data(p_cca_roi_max2);
     tracking_data_t* tracking_data = tracking_alloc_data(MAX(p_trk_obj_min, p_trk_ext_o) + 1, p_cca_roi_max2);
     // uint8_t **IG0 = ui8matrix(i0, i1, j0, j1); // grayscale input image at t - 1
     uint8_t **IG1 = ui8matrix(i0, i1, j0, j1); // grayscale input image at t
-    // uint8_t **IB0 = ui8matrix(i0, i1, j0, j1); // binary image (after Sigma-Delta) at t - 1
-    // uint8_t **IB1 = ui8matrix(i0, i1, j0, j1); // binary image (after Sigma-Delta) at t
-    // uint32_t **L10 = ui32matrix(i0, i1, j0, j1); // labels (CCL) at t - 1
-    // uint32_t **L11 = ui32matrix(i0, i1, j0, j1); // labels (CCL) at t
-    // uint32_t **L20 = NULL; // labels (CCL + surface filter) at t - 1
-    // uint32_t **L21 = NULL; // labels (CCL + surface filter) at t
-    // if (p_ccl_fra_path) {
-    //     L20 = ui32matrix(i0, i1, j0, j1);
-    //     L21 = ui32matrix(i0, i1, j0, j1);
-    // }
-
     Logger_RoIs log_RoIs(p_log_path ? p_log_path : "", p_vid_in_start, p_vid_in_skip, p_cca_roi_max2, tracking_data);
     Logger_kNN log_kNN(p_log_path ? p_log_path : "", p_vid_in_start, p_cca_roi_max2);
     Logger_tracks log_trk(p_log_path ? p_log_path : "", p_vid_in_start, tracking_data);
@@ -344,47 +325,25 @@ int main(int argc, char** argv) {
     // ------------------------- //
 
     uint32_t cur_fra;
-    //video["generate::out_img_gray8"].bind(&IG1[0][0]);
     video["generate::out_frame"].bind(&cur_fra);
     video["generate::out_img_gray8"].bind(IG1[0]);
     video("generate").exec();
     delayer.set_data(IG1[0]);
 
-    // sigma_delta_init_data(sd_data0, (const uint8_t**)IG1, i0, i1, j0, j1);
-    //sigma_delta_init_data(sd_data1, (const uint8_t**)IG1, i0, i1, j0, j1);
     sd0.init_data((const uint8_t**)IG1), sd1.init_data((const uint8_t**)IG1);
-
-    // zero_ui8matrix(IG0, i0, i1, j0, j1);
     zero_ui8matrix(IG1, i0, i1, j0, j1);
-    // zero_ui8matrix(IB0, i0, i1, j0, j1);
-    // zero_ui8matrix(IB1, i0, i1, j0, j1);
-    // zero_ui32matrix(L10, i0, i1, j0, j1);
-    // zero_ui32matrix(L11, i0, i1, j0, j1);
-    // if (p_ccl_fra_path) {
-    //     zero_ui32matrix(L20, i0, i1, j0, j1);
-    //     zero_ui32matrix(L21, i0, i1, j0, j1);
-    // }
-    // morpho_init_data(morpho_data0);
-    // morpho_init_data(morpho_data1);
-    // CCL_LSL_init_data(ccl_data0);
-    // CCL_LSL_init_data(ccl_data1);
     features_init_RoIs(RoIs_tmp0, p_cca_roi_max1);
     features_init_RoIs(RoIs_tmp1, p_cca_roi_max1);
-    // features_init_RoIs(RoIs0, p_cca_roi_max2);
-    // features_init_RoIs(RoIs1, p_cca_roi_max2);
     kNN_init_data(knn_data);
     tracking_init_data(tracking_data);
 
     if (visu) {
         (*visu)["display::in_frame"] = video["generate::out_frame"];
-        (*visu)["display::in_img"].bind(IG1[0]);
+        (*visu)["display::in_img"] = video["generate::out_img_gray8"];
         (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
         (*visu)["display::in_n_RoIs"] = features1["filter::out_n_RoIs"];
         (*visu)("display").exec();
     }
-
-    // TIME_POINT(stop_alloc_init);
-    // printf("# Allocations and initialisations took %6.3f sec\n", TIME_ELAPSED2_SEC(start_alloc_init, stop_alloc_init));
 
     // --------------------- //
     // -- PROCESSING LOOP -- //
@@ -392,187 +351,93 @@ int main(int argc, char** argv) {
 
     printf("# The program is running...\n");
     size_t n_moving_objs = 0, n_processed_frames = 0;
-    // TIME_SETA(dec_a); TIME_SETA(sd_a); TIME_SETA(mrp_a); TIME_SETA(ccl_a); TIME_SETA(cca_a); TIME_SETA(flt_a);
-    // TIME_SETA(knn_a); TIME_SETA(trk_a); TIME_SETA(log_a); TIME_SETA(vis_a);
-    // TIME_POINT(start_compute);
-    //while (1) {
-        // step 0: video decoding
-        // TIME_POINT(dec_b);
-        // try {
-        //     //video("generate").exec();
-        // } catch (const spu::tools::processing_aborted&) {}
-        // TIME_POINT(dec_e);
-        // TIME_ACC(dec_a, dec_b, dec_e);
+    
+    // -------------------------------------- //
+    // -- IMAGE PROCESSING CHAIN EXECUTION -- //
+    // -------------------------------------- //
 
-        // loop stop condition (= end of the video)
-        // if (video.is_done())
-        //     break;
+    // ------------------------- //
+    // -- Processing at t - 1 -- //
+    // ------------------------- //
 
-        //delayer("produce").exec();
+    // step 1: motion detection (per pixel) with Sigma-Delta algorithm
+    sd0["compute::in_img"] = delayer["produce::out"];
 
-        //fprintf(stderr, "(II) Frame n°%4d", cur_fra);
+    // step 2: mathematical morphology
+    morpho0["compute::in_img"] = sd0["compute::out_img"];
 
-        // -------------------------------------- //
-        // -- IMAGE PROCESSING CHAIN EXECUTION -- //
-        // -------------------------------------- //
+    // step 3: connected components labeling (CCL)
+    ccl0["apply::in_img"] = morpho0["compute::out_img"];
 
-        // ------------------------- //
-        // -- Processing at t - 1 -- //
-        // ------------------------- //
+    // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
+    cca0["extract::in_labels"]= ccl0["apply::out_labels"];
+    cca0["extract::in_n_RoIs"]= ccl0["apply::out_n_RoIs"];
 
-        //uint32_t n_RoIs0 = 0;
-        //if (n_processed_frames > 0) {
-            // step 1: motion detection (per pixel) with Sigma-Delta algorithm
-            //TIME_POINT(sd_b);
-            //sd0["compute::in_img"].bind(IG0[0]);
-            sd0["compute::in_img"] = delayer["produce::out"];
-            //sd0("compute").exec();
-            // TIME_POINT(sd_e);
-            // TIME_ACC(sd_a, sd_b, sd_e);
+    // step 5: surface filtering (rm too small and too big RoIs)
+    features0["filter::in_labels"] = ccl0["apply::out_labels"];
+    features0["filter::in_n_RoIs"] = ccl0["apply::out_n_RoIs"];
+    features0["filter::in_RoIs"]   = cca0["extract::out_RoIs"];
+    
+    // --------------------- //
+    // -- Processing at t -- //
+    // --------------------- //
 
-            // step 2: mathematical morphology
-            // TIME_POINT(mrp_b);
-            morpho0["compute::in_img"] = sd0["compute::out_img"];
-            //morpho0("compute").exec();
-            // TIME_POINT(mrp_e);
-            // TIME_ACC(mrp_a, mrp_b, mrp_e);
+    // step 1: motion detection (per pixel) with Sigma-Delta algorithm
+    sd1["compute::in_img"] = video["generate::out_img_gray8"];
 
-            // step 3: connected components labeling (CCL)
-            // TIME_POINT(ccl_b);
-            ccl0["apply::in_img"] = morpho0["compute::out_img"];
-            //ccl0("apply").exec();
+    // step 2: mathematical morphology
+    morpho1["compute::in_img"]= sd1["compute::out_img"];
 
-            // TIME_POINT(ccl_e);
-            // TIME_ACC(ccl_a, ccl_b, ccl_e);
+    // step 3: connected components labeling (CCL)
+    ccl1["apply::in_img"] = morpho1["compute::out_img"];
 
-            // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
-            // TIME_POINT(cca_b);
-            cca0["extract::in_labels"]= ccl0["apply::out_labels"];
-            cca0["extract::in_n_RoIs"]= ccl0["apply::out_n_RoIs"];
-            //cca0("extract").exec();
-            // TIME_POINT(cca_e);
-            // TIME_ACC(cca_a, cca_b, cca_e);
+    // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
+    cca1["extract::in_labels"]= ccl1["apply::out_labels"];
+    cca1["extract::in_n_RoIs"]= ccl1["apply::out_n_RoIs"];
 
-            // step 5: surface filtering (rm too small and too big RoIs)
-            // TIME_POINT(flt_b);
-            features0["filter::in_labels"] = ccl0["apply::out_labels"];
-            features0["filter::in_n_RoIs"] = ccl0["apply::out_n_RoIs"];
-            features0["filter::in_RoIs"]   = cca0["extract::out_RoIs"];
-            //features0["filter::out_RoIs"].bind((uint8_t*)RoIs0);
-            //features0["filter::out_n_RoIs"].bind(&n_RoIs0);
-            //features0("filter").exec();
-        //     TIME_POINT(flt_e);
-        //     TIME_ACC(flt_a, flt_b, flt_e);
-        // }
+    // step 5: surface filtering (rm too small and too big RoIs)
+    features1["filter::in_labels"] = ccl1["apply::out_labels"];
+    features1["filter::in_n_RoIs"] = ccl1["apply::out_n_RoIs"];
+    features1["filter::in_RoIs"]   = cca1["extract::out_RoIs"];
 
-        // --------------------- //
-        // -- Processing at t -- //
-        // --------------------- //
+    delayer["memorize::in"] = video["generate::out_img_gray8"];
 
-        // step 1: motion detection (per pixel) with Sigma-Delta algorithm
-        // TIME_POINT(sd_b);
-        //sd1["compute::in_img"].bind(IG1[0]);
-        sd1["compute::in_img"] = video["generate::out_img_gray8"];
-        //sd1("compute").exec();
-        // TIME_POINT(sd_e);
-        // TIME_ACC(sd_a, sd_b, sd_e);
+    // ----------------------------- //
+    // -- Associations (t - 1, t) -- //
+    // ----------------------------- //
 
-        // step 2: mathematical morphology
-        // TIME_POINT(mrp_b);
-        morpho1["compute::in_img"]= sd1["compute::out_img"];
-        //morpho1("compute").exec();
-        // TIME_POINT(mrp_e);
-        // TIME_ACC(mrp_a, mrp_b, mrp_e);
+    // step 6: k-NN matching (RoIs associations)
+    knn["match::in_RoIs0"] = features0["filter::out_RoIs"];
+    knn["match::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
+    knn["match::in_RoIs1"] = features1["filter::out_RoIs"];
+    knn["match::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
 
-        // step 3: connected components labeling (CCL)
-        // TIME_POINT(ccl_b);
-        ccl1["apply::in_img"] = morpho1["compute::out_img"];
-        //ccl1("apply").exec();
-        // TIME_POINT(ccl_e);
-        // TIME_ACC(ccl_a, ccl_b, ccl_e);
+    // step 7: temporal tracking
+    tracking["perform::in_RoIs"] = knn["match::out_RoIs1"];
+    tracking["perform::in_n_RoIs"] = features1["filter::out_n_RoIs"];
+    tracking["perform::in_frame"] = video["generate::out_frame"];
 
-        // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
-        // TIME_POINT(cca_b);
-        cca1["extract::in_labels"]= ccl1["apply::out_labels"];
-        cca1["extract::in_n_RoIs"]= ccl1["apply::out_n_RoIs"];
-        //cca1("extract").exec();
-        // TIME_POINT(cca_e);
-        // TIME_ACC(cca_a, cca_b, cca_e);
+    // ---------- //
+    // -- LOGS -- //
+    // ---------- //
 
-        // step 5: surface filtering (rm too small and too big RoIs)
-        // TIME_POINT(flt_b);
-        //uint32_t n_RoIs1;
-        features1["filter::in_labels"] = ccl1["apply::out_labels"];
-        features1["filter::in_n_RoIs"] = ccl1["apply::out_n_RoIs"];
-        features1["filter::in_RoIs"]   = cca1["extract::out_RoIs"];
-        //features1["filter::out_RoIs"].bind((uint8_t*)RoIs1);
-        //features1["filter::out_n_RoIs"].bind(&n_RoIs1);
-        //features1("filter").exec();
-        // TIME_POINT(flt_e);
-        // TIME_ACC(flt_a, flt_b, flt_e);
+    // TIME_POINT(log_b);
+    // save frames (CCs)
+    if (p_ccl_fra_path) {
+        (*log_fra)["write::in_labels"] = features1["filter::out_labels"];
+        (*log_fra)["write::in_RoIs"] = knn["match::out_RoIs1"];
+        (*log_fra)["write::in_n_RoIs"] = features1["filter::out_n_RoIs"];
+    }
 
-        delayer["memorize::in"] = video["generate::out_img_gray8"];
-        //delayer("memorize").exec();
+    // save stats
+    if (p_log_path) {
+        log_RoIs["write::in_RoIs0"] = knn["match::out_RoIs0"];
+        log_RoIs["write::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
+        log_RoIs["write::in_RoIs1"] = knn["match::out_RoIs1"];
+        log_RoIs["write::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
+        log_RoIs["write::in_frame"] = video["generate::out_frame"];
 
-        // ----------------------------- //
-        // -- Associations (t - 1, t) -- //
-        // ----------------------------- //
-
-        // step 6: k-NN matching (RoIs associations)
-        // TIME_POINT(knn_b);
-        // kNN knn(knn_data, n_RoIs0, n_RoIs1, p_knn_k, p_knn_d, p_knn_s);
-        // uint32_t n_assoc;
-        //kNN_match(knn_data, RoIs0, n_RoIs0, RoIs1, n_RoIs1, p_knn_k, p_knn_d, p_knn_s);
-        knn["match::in_RoIs0"] = features0["filter::out_RoIs"];
-        knn["match::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
-        knn["match::in_RoIs1"] = features1["filter::out_RoIs"];
-        knn["match::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
-        //knn["match::out_RoIs1"] = knn["match::in_RoIs1"];
-        //knn["match::out_RoIs0"].bind((uint8_t*)RoIs0);
-        //knn["match::out_RoIs1"].bind((uint8_t*)RoIs1);
-        // knn["match::out_n_assoc"].bind(&n_assoc);
-        //knn("match").exec();
-        // TIME_POINT(knn_e);
-        // TIME_ACC(knn_a, knn_b, knn_e);
-
-        // step 7: temporal tracking
-        // TIME_POINT(trk_b);
-        // tracking_perform(tracking_data, RoIs1, n_RoIs1, cur_fra, p_trk_ext_d, p_trk_obj_min,
-        //                  p_trk_roi_path != NULL || visu, p_trk_ext_o, p_knn_s);
-        //Tracking tracking(tracking_data, n_RoIs1, cur_fra, p_trk_ext_d, p_trk_obj_min, p_trk_roi_path != NULL || visu,
-        //                  p_trk_ext_o, p_knn_s);
-        //tracking["perform::in_RoIs"].bind((uint8_t*)RoIs1);
-        tracking["perform::in_RoIs"] = knn["match::out_RoIs1"];
-        tracking["perform::in_n_RoIs"] = features1["filter::out_n_RoIs"];
-        tracking["perform::in_frame"] = video["generate::out_frame"];
-        //tracking("perform").exec();
-        // TIME_POINT(trk_e);
-        // TIME_ACC(trk_a, trk_b, trk_e);
-
-        // ---------- //
-        // -- LOGS -- //
-        // ---------- //
-
-        // TIME_POINT(log_b);
-        // save frames (CCs)
-        if (p_ccl_fra_path) {
-            //(*log_fra)["write::in_labels"].bind(L21[0]);
-            (*log_fra)["write::in_labels"] = features1["filter::out_labels"];
-            (*log_fra)["write::in_RoIs"] = knn["match::out_RoIs1"];
-            (*log_fra)["write::in_n_RoIs"] = features1["filter::out_n_RoIs"];
-            //(*log_fra)("write").exec();
-        }
-
-        // save stats
-        if (p_log_path) {
-            log_RoIs["write::in_RoIs0"] = knn["match::out_RoIs0"];
-            log_RoIs["write::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
-            log_RoIs["write::in_RoIs1"] = knn["match::out_RoIs1"];
-            log_RoIs["write::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
-            log_RoIs["write::in_frame"] = video["generate::out_frame"];
-            //log_RoIs("write").exec();
-
-            if (cur_fra > (uint32_t)p_vid_in_start) {
+            //if (cur_fra > (uint32_t)p_vid_in_start) {
                 log_kNN["write::in_nearest"].bind(knn_data->nearest[0]);
                 log_kNN["write::in_distances"].bind(knn_data->distances[0]);
 #ifdef MOTION_ENABLE_DEBUG
@@ -583,56 +448,35 @@ int main(int argc, char** argv) {
                 log_kNN["write::in_RoIs1"] = knn["match::out_RoIs1"];
                 log_kNN["write::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
                 log_kNN["write::in_frame"] = video["generate::out_frame"];
-                //log_kNN("write").exec();
 
                 log_trk["write::in_frame"] = video["generate::out_frame"];
-                //log_trk("write").exec();
-            }
+            //}
         }
-        // TIME_POINT(log_e);
-        // TIME_ACC(log_a, log_b, log_e);
-
-        // display the result to the screen or write it into a video file
-        // TIME_POINT(vis_b);
+      
         if (visu) {
             (*visu)["display::in_frame"] = video["generate::out_frame"];
-            (*visu)["display::in_img"].bind(IG1[0]);
+            (*visu)["display::in_img"] = video["generate::out_img_gray8"];
             (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
             (*visu)["display::in_n_RoIs"] = features1["filter::out_n_RoIs"];
-            //(*visu)("display").exec();
         }
-        // TIME_POINT(vis_e);
-        // TIME_ACC(vis_a, vis_b, vis_e);
-
-        // swap IG0 <-> IG1 for the next frame
-        // uint8_t** tmp = IG0;
-        // IG0 = IG1;
-        // IG1 = tmp;
-        // here we need to rebind the IG1 because we swapped the IG0 & IG1 buffers!
-        //video["generate::out_img_gray8"].bind(&IG1[0][0]);
-
-        // TIME_POINT(stop_compute);
-        // fprintf(stderr, " -- Time = %6.3f sec", TIME_ELAPSED2_SEC(start_compute, stop_compute));
-        // fprintf(stderr, " -- FPS = %4d", (int)(n_processed_frames / (TIME_ELAPSED2_SEC(start_compute, stop_compute))));
-        // fprintf(stderr, " -- Tracks = %3lu\r", (unsigned long)n_moving_objs);
-        // fflush(stderr);
-    //}
-    // TIME_POINT(stop_compute);
-    // fprintf(stderr, "\n");
 
     std::vector<spu::runtime::Task*> init_tasks = {&delayer("produce"), &video("generate")};
 
+    TIME_POINT(start_compute);
     spu::runtime::Sequence seq(init_tasks);
     seq.exec([&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
         n_processed_frames++;
         n_moving_objs = tracking_count_objects(tracking_data->tracks);
-        bool is_done = video.is_done();
-        std::cout << "Processed frame " << n_processed_frames << " video done: " << is_done << std::endl;
-        return is_done;
+        fprintf(stderr, " -- Tracks = %3lu\r", (unsigned long)n_moving_objs);
+        fflush(stderr);
+        return video.is_done();
     });
+    TIME_POINT(stop_compute);
 
-    std::ofstream file("graph.dot");
-    seq.export_dot(file);
+    /*std::ofstream file("graph.dot");
+    seq.export_dot(file);*/
+
+    n_moving_objs = tracking_count_objects(tracking_data->tracks);
 
     if (p_trk_roi_path) {
         FILE* f = fopen(p_trk_roi_path, "w");
@@ -648,10 +492,11 @@ int main(int argc, char** argv) {
     printf("# Tracks statistics:\n");
     printf("# -> Processed frames = %4u\n", (unsigned)n_processed_frames);
     printf("# -> Detected tracks  = %4lu\n", (unsigned long)n_moving_objs);
-    // printf("# -> Took %6.3f seconds (avg %d FPS)\n", TIME_ELAPSED2_SEC(start_compute, stop_compute),
-    //        (int)(n_processed_frames / (TIME_ELAPSED2_SEC(start_compute, stop_compute))));
-    if (p_stats) {
-        printf("#\n");
+    printf("# -> Took %6.3f seconds (avg %d FPS)\n", TIME_ELAPSED2_SEC(start_compute, stop_compute),
+            (int)(n_processed_frames / (TIME_ELAPSED2_SEC(start_compute, stop_compute))));
+    
+    //if (p_stats) {
+    //    printf("#\n");
         // printf("# Average latencies: \n");
         // printf("# -> Video decoding = %8.3f ms\n", TIME_ELAPSED_MS(dec_a) / n_processed_frames);
         // printf("# -> Sigma-Delta    = %8.3f ms\n", TIME_ELAPSED_MS(sd_a)  / n_processed_frames);
@@ -669,7 +514,7 @@ int main(int argc, char** argv) {
         // TIME_ADD(total, log_a); TIME_ADD(total, vis_a);
         // double total = TIME_ELAPSED_MS(total) / n_processed_frames;
         // printf("# => Total          = %8.3f ms [~%5.2f FPS]\n", total, 1000. / total);
-    }
+    //}
 
     // some frames have been buffered for the visualization, display or write these frames here
     if (visu)
@@ -679,26 +524,9 @@ int main(int argc, char** argv) {
     // -- FREE -- //
     // ---------- //
 
-    /*sigma_delta_free_data(sd_data0);
-    sigma_delta_free_data(sd_data1);
-    morpho_free_data(morpho_data0);
-    morpho_free_data(morpho_data1);*/
-    // free_ui8matrix(IG0, i0, i1, j0, j1);
     free_ui8matrix(IG1, i0, i1, j0, j1);
-    // free_ui8matrix(IB0, i0, i1, j0, j1);
-    // free_ui8matrix(IB1, i0, i1, j0, j1);
-    // free_ui32matrix(L10, i0, i1, j0, j1);
-    // free_ui32matrix(L11, i0, i1, j0, j1);
-    // if (p_ccl_fra_path) {
-    //     free_ui32matrix(L20, i0, i1, j0, j1);
-    //     free_ui32matrix(L21, i0, i1, j0, j1);
-    // }
     features_free_RoIs(RoIs_tmp0);
     features_free_RoIs(RoIs_tmp1);
-    // features_free_RoIs(RoIs0);
-    // features_free_RoIs(RoIs1);
-    /*CCL_LSL_free_data(ccl_data0);
-    CCL_LSL_free_data(ccl_data1);*/
     kNN_free_data(knn_data);
     tracking_free_data(tracking_data);
 

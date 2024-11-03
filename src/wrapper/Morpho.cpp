@@ -26,18 +26,6 @@ Morpho::Morpho(const int i0, const int i1, const int j0, const int j1)
         const uint8_t** in_img = t[si_img].get_2d_dataptr<const uint8_t>();
         uint8_t** out_img = t[so_img].get_2d_dataptr<uint8_t>();
 
-        // std::cout << "morpho in_img_ptr: " << in_img << std::endl;
-        // std::cout << "morpho out_img_ptr: " << out_img << std::endl;
-
-        //print 10 els of out_img
-        // printf("morpho in_img (%p): \n", in_img);
-        // for(int i = 0; i < 10; i++){
-        //     for(int j = 0; j < 10; j++){
-        //         std::cout << (int)in_img[i][j] << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
-
         morpho_compute_opening3(mrp.morpho_data, in_img, out_img, mrp.i0, mrp.i1, mrp.j0, mrp.j1);
         morpho_compute_closing3(mrp.morpho_data, (const uint8_t**)out_img, out_img, mrp.i0, mrp.i1, mrp.j0, mrp.j1);
 

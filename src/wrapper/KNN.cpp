@@ -10,8 +10,6 @@ kNN::kNN(kNN_data_t* knn_data, int knn_k, uint32_t knn_d, float knn_s, uint32_t 
 
     auto &t = this->create_task("match");
     
-    // kNN_match(knn_data, RoIs0, n_RoIs0, RoIs1, n_RoIs1, p_knn_k, p_knn_d, p_knn_s);
-
     //input socket
     size_t si_RoIs0 = this->template create_socket_in<uint8_t>(t, "in_RoIs0", p_cca_roi_max2* sizeof(RoI_t));
     size_t si_RoIs1 = this->template create_socket_in<uint8_t>(t, "in_RoIs1", p_cca_roi_max2* sizeof(RoI_t));
