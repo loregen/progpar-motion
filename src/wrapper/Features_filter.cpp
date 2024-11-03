@@ -30,8 +30,6 @@ Features_filter::Features_filter(const int i0, const int i1, const int j0, const
         RoI_t* RoIs = t[so_roi].get_dataptr<RoI_t>();
         const uint32_t* n_RoIs = t[si_n_RoIs].get_dataptr<const uint32_t>();
         uint32_t* n_RoIs_out = t[so_n_RoIs].get_dataptr<uint32_t>();
-
-        *n_RoIs_out = features_filter_surface(in_labels, out_labels, ff.i0, ff.i1, ff.j0, ff.j1,(RoI_t *) RoIs_tmp, *n_RoIs, ff.min_size_f, ff.max_size_f);
         assert(*n_RoIs_out <= (uint32_t)max_size_roi2);
         features_shrink_basic(RoIs_tmp, *n_RoIs, RoIs);
 
@@ -43,19 +41,23 @@ Features_filter::Features_filter(const int i0, const int i1, const int j0, const
     auto sf_labels = this->template create_2d_socket_fwd<uint32_t>(f, "fwd_labels", ((i1 - i0) + 1), ((j1 - j0) + 1));
     auto si_roi = this->template create_socket_in<uint8_t>(f, "in_RoIs", max_size_roi * sizeof(RoI_t));
     so_roi = this->template create_socket_out<uint8_t>(f, "out_RoIs", max_size_roi2 * sizeof(RoI_t));
-    auto sf_n_RoIs = this->template create_socket_fwd<uint32_t>(f, "fwd_n_RoIs", 1);
+    si_n_RoIs = this->template create_socket_in<uint32_t>(f, "in_n_RoIs", 1);
+    so_n_RoIs = this->template create_socket_out<uint32_t>(f, "out_n_RoIs", 1);
 
-    this->create_codelet(f, [sf_labels, sf_n_RoIs, si_roi,so_roi, max_size_roi2]
+
+    this->create_codelet(f, [sf_labels, si_n_RoIs,so_n_RoIs, si_roi,so_roi, max_size_roi2]
                             (spu::module::Module &m, spu::runtime::Task &t, const size_t frame_id) -> int {
         auto &ff = static_cast<Features_filter&>(m);
         
-        uint32_t** in_labels = t[sf_labels].get_2d_dataptr<uint32_t>();
+        const uint32_t** in_labels = t[sf_labels].get_2d_dataptr<const uint32_t>();
         const RoI_t* RoIs_tmp = t[si_roi].get_dataptr<const RoI_t>();
         RoI_t* RoIs = t[so_roi].get_dataptr<RoI_t>();
-        uint32_t* n_RoIs = t[sf_n_RoIs].get_dataptr<uint32_t>();
+        const uint32_t* n_RoIs = t[si_n_RoIs].get_dataptr<const uint32_t>();
+        uint32_t* n_RoIs_out = t[so_n_RoIs].get_dataptr<uint32_t>();
+
         
 
-        *n_RoIs = features_filter_surface((const uint32_t**)in_labels, in_labels, ff.i0, ff.i1, ff.j0, ff.j1,(RoI_t *) RoIs_tmp, *n_RoIs, ff.min_size_f, ff.max_size_f);
+        *n_RoIs_out = features_filter_surface(in_labels, (uint32_t **) in_labels, ff.i0, ff.i1, ff.j0, ff.j1,(RoI_t *) RoIs_tmp, *n_RoIs, ff.min_size_f, ff.max_size_f);
         assert(*n_RoIs <= (uint32_t)max_size_roi2);
         features_shrink_basic(RoIs_tmp, *n_RoIs, RoIs);
         return spu::runtime::status_t::SUCCESS;
