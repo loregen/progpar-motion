@@ -18,6 +18,7 @@ protected:
     const int j1;
     CCL_data_t* ccl_data;
     uint8_t no_init_labels;
+    int def_p_cca_roi_max1 = 65536;
 public:
     CCL(const int i0, const int i1, const int j0, const int j1, uint8_t no_init_labels);
     virtual ~CCL();

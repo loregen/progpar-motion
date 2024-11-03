@@ -372,7 +372,6 @@ int main(int argc, char** argv) {
     tracking_init_data(tracking_data);
 
     if (visu) {
-        uint32_t n_RoIs1 = 0;
         (*visu)["display::in_frame"].bind(&cur_fra);
         (*visu)["display::in_img"].bind(IG1[0]);
         (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
@@ -433,11 +432,8 @@ int main(int argc, char** argv) {
 
             // step 3: connected components labeling (CCL)
             TIME_POINT(ccl_b);
-            uint32_t n_RoIs_tmp0 = 0;
             ccl0["apply::in_img"] = morpho0["compute::out_img"];
-            //ccl0["apply::out_n_RoIs"].bind(&n_RoIs_tmp0);
             ccl0("apply").exec();
-            //assert(n_RoIs_tmp0 <= (uint32_t)def_p_cca_roi_max1);
 
             TIME_POINT(ccl_e);
             TIME_ACC(ccl_a, ccl_b, ccl_e);
@@ -482,11 +478,8 @@ int main(int argc, char** argv) {
 
         // step 3: connected components labeling (CCL)
         TIME_POINT(ccl_b);
-        uint32_t n_RoIs_tmp1;
         ccl1["apply::in_img"] = morpho1["compute::out_img"];
-        //ccl1["apply::out_n_RoIs"].bind(&n_RoIs_tmp1);
         ccl1("apply").exec();
-        //assert(n_RoIs_tmp1 <= (uint32_t)def_p_cca_roi_max1);
         TIME_POINT(ccl_e);
         TIME_ACC(ccl_a, ccl_b, ccl_e);
 

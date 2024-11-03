@@ -20,7 +20,7 @@ CCL::CCL(const int i0, const int i1, const int j0, const int j1, uint8_t no_init
     auto roi = this->template create_socket_out<uint32_t>(c, "out_n_RoIs", 1);
     auto so_labels = this->template create_2d_socket_out<uint32_t>(c, "out_labels", ((i1 - i0) + 1), ((j1 - j0) + 1));
 
-    this->create_codelet(c, [si_img, so_labels, roi]
+    this->create_codelet(c, [si_img, so_labels, roi, this]
                             (spu::module::Module &m, spu::runtime::Task &t, const size_t frame_id) -> int {
         auto &ccl = static_cast<CCL&>(m);
 
@@ -29,6 +29,8 @@ CCL::CCL(const int i0, const int i1, const int j0, const int j1, uint8_t no_init
         uint32_t* out_roi = t[roi].get_dataptr<uint32_t>();
         
         *out_roi = CCL_LSL_apply(ccl.ccl_data, in_img, out_label, ccl.no_init_labels);
+
+        assert(*out_roi <= (uint32_t)def_p_cca_roi_max1);
 
         return spu::runtime::status_t::SUCCESS;
     });
