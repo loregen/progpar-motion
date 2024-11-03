@@ -462,8 +462,12 @@ int main(int argc, char** argv) {
 
     std::vector<spu::runtime::Task*> init_tasks = {&delayer("produce"), &video("generate")};
 
-    TIME_POINT(start_compute);
     spu::runtime::Sequence seq(init_tasks);
+    // enable the statistics collection for each task of the sequence
+    for (auto& mdl : seq.get_modules<spu::module::Module>(false))
+        for (auto& tsk : mdl->tasks)
+            tsk->set_stats(true);
+    TIME_POINT(start_compute);
     seq.exec([&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
         n_processed_frames++;
         n_moving_objs = tracking_count_objects(tracking_data->tracks);
@@ -472,9 +476,11 @@ int main(int argc, char** argv) {
         return video.is_done();
     });
     TIME_POINT(stop_compute);
+    const bool ordered = true, display_throughput = false;
+    spu::tools::Stats::show(seq.get_modules_per_types(), ordered, display_throughput);
 
-    /*std::ofstream file("graph.dot");
-    seq.export_dot(file);*/
+    std::ofstream file("graph.dot");
+    seq.export_dot(file);
 
     n_moving_objs = tracking_count_objects(tracking_data->tracks);
 
