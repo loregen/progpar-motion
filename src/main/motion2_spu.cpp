@@ -374,9 +374,9 @@ int main(int argc, char** argv) {
     cca0["extract::in_n_RoIs"]= ccl0["apply::out_n_RoIs"];
 
     // step 5: surface filtering (rm too small and too big RoIs)
-    features0["filter::in_labels"] = ccl0["apply::out_labels"];
-    features0["filter::in_n_RoIs"] = ccl0["apply::out_n_RoIs"];
-    features0["filter::in_RoIs"]   = cca0["extract::out_RoIs"];
+    features0["filterf::fwd_labels"] = ccl0["apply::out_labels"];
+    features0["filterf::fwd_n_RoIs"] = ccl0["apply::out_n_RoIs"];
+    features0["filterf::in_RoIs"]   = cca0["extract::out_RoIs"];
     
     // --------------------- //
     // -- Processing at t -- //
@@ -407,9 +407,9 @@ int main(int argc, char** argv) {
     // ----------------------------- //
 
     // step 6: k-NN matching (RoIs associations)
-    knn["match::in_RoIs0"] = features0["filter::out_RoIs"];
-    knn["match::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
-    knn["match::in_RoIs1"] = features1["filter::out_RoIs"];
+    knn["match::in_RoIs0"] =   features0["filterf::out_RoIs"];
+    knn["match::in_n_RoIs0"] = features0["filterf::fwd_n_RoIs"];
+    knn["match::in_RoIs1"] =   features1["filter::out_RoIs"];
     knn["match::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
 
     // step 7: temporal tracking
@@ -432,7 +432,7 @@ int main(int argc, char** argv) {
     // save stats
     if (p_log_path) {
         log_RoIs["write::in_RoIs0"] = knn["match::out_RoIs0"];
-        log_RoIs["write::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
+        log_RoIs["write::in_n_RoIs0"] = features0["filterf::fwd_n_RoIs"];
         log_RoIs["write::in_RoIs1"] = knn["match::out_RoIs1"];
         log_RoIs["write::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
         log_RoIs["write::in_frame"] = video["generate::out_frame"];
@@ -444,7 +444,7 @@ int main(int argc, char** argv) {
                 log_kNN["write::in_conflicts"].bind(knn_data->conflicts);
 #endif
                 log_kNN["write::in_RoIs0"] = knn["match::out_RoIs0"];
-                log_kNN["write::in_n_RoIs0"] = features0["filter::out_n_RoIs"];
+                log_kNN["write::in_n_RoIs0"] = features0["filterf::fwd_n_RoIs"];
                 log_kNN["write::in_RoIs1"] = knn["match::out_RoIs1"];
                 log_kNN["write::in_n_RoIs1"] = features1["filter::out_n_RoIs"];
                 log_kNN["write::in_frame"] = video["generate::out_frame"];
