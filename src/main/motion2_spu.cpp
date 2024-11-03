@@ -1,3 +1,14 @@
+/*
+Name:
+Group:
+*/
+
+/*
+    TASK 7
+    
+*/
+
+
 #include <stdio.h>
 #include <assert.h>
 #include <stdio.h>
@@ -289,7 +300,6 @@ int main(int argc, char** argv) {
     RoI_t* RoIs_tmp1 = features_alloc_RoIs(p_cca_roi_max1);
     kNN_data_t* knn_data = kNN_alloc_data(p_cca_roi_max2);
     tracking_data_t* tracking_data = tracking_alloc_data(MAX(p_trk_obj_min, p_trk_ext_o) + 1, p_cca_roi_max2);
-    // uint8_t **IG0 = ui8matrix(i0, i1, j0, j1); // grayscale input image at t - 1
     uint8_t **IG1 = ui8matrix(i0, i1, j0, j1); // grayscale input image at t
     Logger_RoIs log_RoIs(p_log_path ? p_log_path : "", p_vid_in_start, p_vid_in_skip, p_cca_roi_max2, tracking_data);
     Logger_kNN log_kNN(p_log_path ? p_log_path : "", p_vid_in_start, p_cca_roi_max2);
@@ -501,26 +511,6 @@ int main(int argc, char** argv) {
     printf("# -> Took %6.3f seconds (avg %d FPS)\n", TIME_ELAPSED2_SEC(start_compute, stop_compute),
             (int)(n_processed_frames / (TIME_ELAPSED2_SEC(start_compute, stop_compute))));
     
-    //if (p_stats) {
-    //    printf("#\n");
-        // printf("# Average latencies: \n");
-        // printf("# -> Video decoding = %8.3f ms\n", TIME_ELAPSED_MS(dec_a) / n_processed_frames);
-        // printf("# -> Sigma-Delta    = %8.3f ms\n", TIME_ELAPSED_MS(sd_a)  / n_processed_frames);
-        // printf("# -> Morphology     = %8.3f ms\n", TIME_ELAPSED_MS(mrp_a) / n_processed_frames);
-        // printf("# -> CC Labeling    = %8.3f ms\n", TIME_ELAPSED_MS(ccl_a) / n_processed_frames);
-        // printf("# -> CC Analysis    = %8.3f ms\n", TIME_ELAPSED_MS(cca_a) / n_processed_frames);
-        // printf("# -> Filtering      = %8.3f ms\n", TIME_ELAPSED_MS(flt_a) / n_processed_frames);
-        // printf("# -> k-NN           = %8.3f ms\n", TIME_ELAPSED_MS(knn_a) / n_processed_frames);
-        // printf("# -> Tracking       = %8.3f ms\n", TIME_ELAPSED_MS(trk_a) / n_processed_frames);
-        // printf("# -> *Logs*         = %8.3f ms\n", TIME_ELAPSED_MS(log_a) / n_processed_frames);
-        // printf("# -> *Visu*         = %8.3f ms\n", TIME_ELAPSED_MS(vis_a) / n_processed_frames);
-        // TIME_SETA(total);
-        // TIME_ADD(total, dec_a); TIME_ADD(total,  sd_a); TIME_ADD(total, mrp_a); TIME_ADD(total, ccl_a);
-        // TIME_ADD(total, cca_a); TIME_ADD(total, flt_a); TIME_ADD(total, knn_a); TIME_ADD(total, trk_a);
-        // TIME_ADD(total, log_a); TIME_ADD(total, vis_a);
-        // double total = TIME_ELAPSED_MS(total) / n_processed_frames;
-        // printf("# => Total          = %8.3f ms [~%5.2f FPS]\n", total, 1000. / total);
-    //}
 
     // some frames have been buffered for the visualization, display or write these frames here
     if (visu)
