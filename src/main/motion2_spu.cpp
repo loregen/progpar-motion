@@ -437,16 +437,15 @@ int main(int argc, char** argv) {
             TIME_POINT(cca_b);
             cca0["extract::in_labels"]= ccl0["apply::out_labels"];
             cca0["extract::in_n_RoIs"]= ccl0["apply::out_n_RoIs"];
-            cca0["extract::out_RoIs"].bind((uint8_t*)RoIs_tmp0);
             cca0("extract").exec();
             TIME_POINT(cca_e);
             TIME_ACC(cca_a, cca_b, cca_e);
 
             // step 5: surface filtering (rm too small and too big RoIs)
             TIME_POINT(flt_b);
-            features0["filter::in_labels"]= ccl0["apply::out_labels"];
-            features0["filter::in_n_RoIs"]= ccl0["apply::out_n_RoIs"];
-            features0["filter::out_RoIs_tmp"].bind((uint8_t*)RoIs_tmp0);
+            features0["filter::in_labels"] = ccl0["apply::out_labels"];
+            features0["filter::in_n_RoIs"] = ccl0["apply::out_n_RoIs"];
+            features0["filter::in_RoIs"]   = cca0["extract::out_RoIs"];
             features0["filter::out_RoIs"].bind((uint8_t*)RoIs0);
             features0["filter::out_n_RoIs"].bind(&n_RoIs0);
             features0("filter").exec();
@@ -476,7 +475,6 @@ int main(int argc, char** argv) {
         TIME_POINT(ccl_b);
         uint32_t n_RoIs_tmp1;
         ccl1["apply::in_img"] = morpho1["compute::out_img"];
-        // ccl1["apply::out_n_RoIs"].bind(&n_RoIs_tmp1);
         ccl1("apply").exec();
         assert(n_RoIs_tmp1 <= (uint32_t)def_p_cca_roi_max1);
         TIME_POINT(ccl_e);
@@ -486,7 +484,6 @@ int main(int argc, char** argv) {
         TIME_POINT(cca_b);
         cca1["extract::in_labels"]= ccl1["apply::out_labels"];
         cca1["extract::in_n_RoIs"]= ccl1["apply::out_n_RoIs"];
-        cca1["extract::out_RoIs"].bind((uint8_t*)RoIs_tmp1);
         cca1("extract").exec();
         TIME_POINT(cca_e);
         TIME_ACC(cca_a, cca_b, cca_e);
@@ -494,9 +491,9 @@ int main(int argc, char** argv) {
         // step 5: surface filtering (rm too small and too big RoIs)
         TIME_POINT(flt_b);
         uint32_t n_RoIs1;
-        features1["filter::in_labels"]= ccl1["apply::out_labels"];
+        features1["filter::in_labels"] = ccl1["apply::out_labels"];
         features1["filter::in_n_RoIs"] = ccl1["apply::out_n_RoIs"];
-        features1["filter::out_RoIs_tmp"].bind((uint8_t*)RoIs_tmp1);
+        features1["filter::in_RoIs"]   = cca1["extract::out_RoIs"];
         features1["filter::out_RoIs"].bind((uint8_t*)RoIs1);
         features1["filter::out_n_RoIs"].bind(&n_RoIs1);
         features1("filter").exec();
