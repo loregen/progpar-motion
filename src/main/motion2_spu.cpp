@@ -354,11 +354,8 @@ int main(int argc, char** argv) {
     // -- DATA ALLOCATION -- //
     // --------------------- //
 
-    RoI_t* RoIs_tmp0 = features_alloc_RoIs(p_cca_roi_max1);
-    RoI_t* RoIs_tmp1 = features_alloc_RoIs(p_cca_roi_max1);
     kNN_data_t* knn_data = kNN_alloc_data(p_cca_roi_max2);
     tracking_data_t* tracking_data = tracking_alloc_data(MAX(p_trk_obj_min, p_trk_ext_o) + 1, p_cca_roi_max2);
-    uint8_t **IG1 = ui8matrix(i0, i1, j0, j1); // grayscale input image at t
     Logger_RoIs log_RoIs(p_log_path ? p_log_path : "", p_vid_in_start, p_vid_in_skip, p_cca_roi_max2, tracking_data);
     Logger_kNN log_kNN(p_log_path ? p_log_path : "", p_vid_in_start, p_cca_roi_max2);
     Logger_tracks log_trk(p_log_path ? p_log_path : "", p_vid_in_start, tracking_data);
@@ -391,26 +388,13 @@ int main(int argc, char** argv) {
     // -- DATA INITIALISATION -- //
     // ------------------------- //
 
-    uint32_t cur_fra;
-    video["generate::out_frame"].bind(&cur_fra);
-    video["generate::out_img_gray8"].bind(IG1[0]);
     video("generate").exec();
-    delayer.set_data(IG1[0]);
+    delayer.set_data(video["generate::out_img_gray8"].get_dataptr<uint8_t>());
 
-    sd0.init_data((const uint8_t**)IG1), sd1.init_data((const uint8_t**)IG1);
-    zero_ui8matrix(IG1, i0, i1, j0, j1);
-    features_init_RoIs(RoIs_tmp0, p_cca_roi_max1);
-    features_init_RoIs(RoIs_tmp1, p_cca_roi_max1);
+    sd0.init_data((const uint8_t**)video["generate::out_img_gray8"].get_2d_dataptr<uint8_t>());
+    sd1.init_data((const uint8_t**)video["generate::out_img_gray8"].get_2d_dataptr<uint8_t>());
     tracking_init_data(tracking_data);
     kNN_init_data(knn_data);
-
-    // if (visu) {
-    //     (*visu)["display::in_frame"] = video["generate::out_frame"];
-    //     (*visu)["display::in_img"] = video["generate::out_img_gray8"];
-    //     (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
-    //     (*visu)["display::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
-    //     (*visu)("display").exec();
-    // }
 
     // --------------------- //
     // -- PROCESSING LOOP -- //
@@ -577,10 +561,6 @@ int main(int argc, char** argv) {
     // ---------- //
     // -- FREE -- //
     // ---------- //
-
-    free_ui8matrix(IG1, i0, i1, j0, j1);
-    features_free_RoIs(RoIs_tmp0);
-    features_free_RoIs(RoIs_tmp1);
     kNN_free_data(knn_data);
     tracking_free_data(tracking_data);
 
