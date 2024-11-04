@@ -370,14 +370,12 @@ int main(int argc, char** argv) {
     CCA cca0(i0, i1, j0, j1, p_cca_roi_max1), cca1(i0, i1, j0, j1, p_cca_roi_max1);
     Features_filter features0(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2),features1(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
 
+
     kNN knn(knn_data, p_knn_k, p_knn_d, p_knn_s, p_cca_roi_max2);
 
     spu::module::Delayer<uint8_t> delayer(((i1 - i0) + 1) * ((j1 - j0) + 1), 0);
 
     std::unique_ptr<Visu> visu;
-
-    Tracking tracking(tracking_data, p_trk_ext_d, p_trk_obj_min, p_trk_roi_path != NULL || visu,
-                          p_trk_ext_o, p_knn_s, p_cca_roi_max2);
 
     if (p_vid_out_play || p_vid_out_path) {
         const uint8_t n_threads = 1;
@@ -386,7 +384,8 @@ int main(int argc, char** argv) {
                             tracking_data));
     }
 
-
+    Tracking tracking(tracking_data, p_trk_ext_d, p_trk_obj_min, p_trk_roi_path != NULL || visu,
+                      p_trk_ext_o, p_knn_s, p_cca_roi_max2);
 
     // ------------------------- //
     // -- DATA INITIALISATION -- //
@@ -402,16 +401,16 @@ int main(int argc, char** argv) {
     zero_ui8matrix(IG1, i0, i1, j0, j1);
     features_init_RoIs(RoIs_tmp0, p_cca_roi_max1);
     features_init_RoIs(RoIs_tmp1, p_cca_roi_max1);
-    kNN_init_data(knn_data);
     tracking_init_data(tracking_data);
+    kNN_init_data(knn_data);
 
-    if (visu) {
-        (*visu)["display::in_frame"] = video["generate::out_frame"];
-        (*visu)["display::in_img"] = video["generate::out_img_gray8"];
-        (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
-        (*visu)["display::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
-        (*visu)("display").exec();
-    }
+    // if (visu) {
+    //     (*visu)["display::in_frame"] = video["generate::out_frame"];
+    //     (*visu)["display::in_img"] = video["generate::out_img_gray8"];
+    //     (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
+    //     (*visu)["display::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
+    //     (*visu)("display").exec();
+    // }
 
     // --------------------- //
     // -- PROCESSING LOOP -- //
@@ -521,12 +520,13 @@ int main(int argc, char** argv) {
             //}
         }
       
-        if (visu) {
-            (*visu)["display::in_frame"] = video["generate::out_frame"];
-            (*visu)["display::in_img"] = video["generate::out_img_gray8"];
-            (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
-            (*visu)["display::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
-        }
+    if (visu) {
+        (*visu)["display::in_frame"] = video["generate::out_frame"];
+        (*visu)["display::in_img"] = video["generate::out_img_gray8"];
+        (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
+        (*visu)["display::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
+        (*visu)("display").exec();
+    }
 
     std::vector<spu::runtime::Task*> init_tasks = {&delayer("produce"), &video("generate")};
 
