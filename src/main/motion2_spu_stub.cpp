@@ -380,21 +380,15 @@ int main(int argc, char **argv)
         Logger_tracks log_trk(p_log_path ? p_log_path : "", p_vid_in_start, tracking_data);
 
         // Processing modules allocation
-        // Sigma_delta sd0(i0, i1, j0, j1, p_sd_n), sd1(i0, i1, j0, j1, p_sd_n);
-        // Morpho morpho0(i0, i1, j0, j1), morpho1(i0, i1, j0, j1);
-        // CCL ccl0(i0, i1, j0, j1, 0), ccl1(i0, i1, j0, j1, 0);
-        // CCA cca0(i0, i1, j0, j1, p_cca_roi_max1), cca1(i0, i1, j0, j1, p_cca_roi_max1);
-        // Features_filter features0(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2), features1(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
-        Sigma_delta     sig_del(i0, i1, j0, j1, p_sd_n);
-        Morpho          morpho(i0, i1, j0, j1);
-        CCL             ccl(i0, i1, j0, j1, 0);
-        CCA             cca(i0, i1, j0, j1, p_cca_roi_max1);
-        Features_filter features(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
-        kNN             knn(knn_data, p_knn_k, p_knn_d, p_knn_s, p_cca_roi_max2);
+        Sigma_delta sd0(i0, i1, j0, j1, p_sd_n), sd1(i0, i1, j0, j1, p_sd_n);
+        Morpho morpho0(i0, i1, j0, j1), morpho1(i0, i1, j0, j1);
+        CCL ccl0(i0, i1, j0, j1, 0), ccl1(i0, i1, j0, j1, 0);
+        CCA cca0(i0, i1, j0, j1, p_cca_roi_max1), cca1(i0, i1, j0, j1, p_cca_roi_max1);
+        Features_filter features0(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2), features1(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
 
-        // spu::module::Delayer<uint8_t> delayer(((i1 - i0) + 1) * ((j1 - j0) + 1), 0);
-        spu::module::Delayer<uint8_t> delayer_RoIs(p_cca_roi_max2*sizeof(RoI_t), 0);
-        spu::module::Delayer<uint32_t> delayer_n_RoIs(1, 0);
+        kNN knn(knn_data, p_knn_k, p_knn_d, p_knn_s, p_cca_roi_max2);
+
+        spu::module::Delayer<uint8_t> delayer(((i1 - i0) + 1) * ((j1 - j0) + 1), 0);
 
         std::unique_ptr<Visu> visu;
 
@@ -414,7 +408,10 @@ int main(int argc, char **argv)
         // ------------------------- //
 
         video("generate").exec();
-        sig_del.init_data((const uint8_t **)video["generate::out_img_gray8"].get_2d_dataptr<uint8_t>());
+        delayer.set_data(video["generate::out_img_gray8"].get_dataptr<uint8_t>());
+
+        sd0.init_data((const uint8_t **)video["generate::out_img_gray8"].get_2d_dataptr<uint8_t>());
+        sd1.init_data((const uint8_t **)video["generate::out_img_gray8"].get_2d_dataptr<uint8_t>());
         tracking_init_data(tracking_data);
         kNN_init_data(knn_data);
 
@@ -429,41 +426,55 @@ int main(int argc, char **argv)
         // -- IMAGE PROCESSING CHAIN EXECUTION -- //
         // -------------------------------------- //
 
+        // ------------------------- //
+        // -- Processing at t - 1 -- //
+        // ------------------------- //
+
+        // step 1: motion detection (per pixel) with Sigma-Delta algorithm
+        sd0["compute::in_img"] = delayer["produce::out"];
+        // step 2: mathematical morphology
+        morpho0["computef::f_img"] = sd0["compute::out_img"];
+
+        // step 3: connected components labeling (CCL)
+        ccl0["apply::in_img"] = morpho0["computef::f_img"];
+        // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
+        cca0["extract::in_labels"] = ccl0["apply::out_labels"];
+        cca0["extract::in_n_RoIs"] = ccl0["apply::out_n_RoIs"];
+        // step 5: surface filtering (rm too small and too big RoIs)
+        features0["filterf::fwd_labels"] = ccl0["apply::out_labels"];
+        features0["filterf::in_n_RoIs"] = ccl0["apply::out_n_RoIs"];
+        features0["filterf::in_RoIs"] = cca0["extract::out_RoIs"];
         // --------------------- //
         // -- Processing at t -- //
         // --------------------- //
 
         // step 1: motion detection (per pixel) with Sigma-Delta algorithm
-        sig_del["compute::in_img"] = video["generate::out_img_gray8"];
+        sd1["compute::in_img"] = video["generate::out_img_gray8"];
         // step 2: mathematical morphology
-        morpho["computef::f_img"] = sig_del["compute::out_img"];
+        morpho1["computef::f_img"] = sd1["compute::out_img"];
         // step 3: connected components labeling (CCL)
-        ccl["apply::in_img"] = morpho["computef::f_img"];
+        ccl1["apply::in_img"] = morpho1["computef::f_img"];
         // step 4: connected components analysis (CCA): from image of labels to "regions of interest" (RoIs)
-        cca["extract::in_labels"] = ccl["apply::out_labels"];
-        cca["extract::in_n_RoIs"] = ccl["apply::out_n_RoIs"];
+        cca1["extract::in_labels"] = ccl1["apply::out_labels"];
+        cca1["extract::in_n_RoIs"] = ccl1["apply::out_n_RoIs"];
         // step 5: surface filtering (rm too small and too big RoIs)
-        features["filterf::fwd_labels"] = ccl["apply::out_labels"];
-        features["filterf::in_n_RoIs"] = ccl["apply::out_n_RoIs"];
-        features["filterf::in_RoIs"] = cca["extract::out_RoIs"];
-        delayer_RoIs["memorize::in"] = features["filterf::out_RoIs"];
-        delayer_n_RoIs["memorize::in"] = features["filterf::out_n_RoIs"];
-        // delayer["memorize::in"] = video["generate::out_img_gray8"];
+        features1["filterf::fwd_labels"] = ccl1["apply::out_labels"];
+        features1["filterf::in_n_RoIs"] = ccl1["apply::out_n_RoIs"];
+        features1["filterf::in_RoIs"] = cca1["extract::out_RoIs"];
+        delayer["memorize::in"] = video["generate::out_img_gray8"];
         // ----------------------------- //
         // -- Associations (t - 1, t) -- //
         // ----------------------------- //
 
         // step 6: k-NN matching (RoIs associations)
-        knn["match::in_RoIs1"]   = features["filterf::out_RoIs"];
-        knn["match::in_n_RoIs1"] = features["filterf::out_n_RoIs"];
-        knn["match::in_RoIs0"]   = delayer_RoIs["produce::out"];
-        knn["match::in_n_RoIs0"] = delayer_n_RoIs["produce::out"];
-        // knn["match::in_RoIs0"]   = delayer_RoIs["produce::out"];
-        // knn["match::in_n_RoIs0"] = delayer_n_RoIs["produce::out"];
+        knn["match::in_RoIs0"] = features0["filterf::out_RoIs"];
+        knn["match::in_n_RoIs0"] = features0["filterf::out_n_RoIs"];
+        knn["match::in_RoIs1"] = features1["filterf::out_RoIs"];
+        knn["match::in_n_RoIs1"] = features1["filterf::out_n_RoIs"];
 
         // step 7: temporal tracking
         tracking["perform::in_RoIs"] = knn["match::out_RoIs1"];
-        tracking["perform::in_n_RoIs"] = features["filterf::out_n_RoIs"];
+        tracking["perform::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
         tracking["perform::in_frame"] = video["generate::out_frame"];
 
         // ---------- //
@@ -474,18 +485,18 @@ int main(int argc, char **argv)
         // save frames (CCs)
         if (p_ccl_fra_path)
         {
-                (*log_fra)["write::in_labels"] = features["filterf::fwd_labels"];
+                (*log_fra)["write::in_labels"] = features1["filterf::fwd_labels"];
                 (*log_fra)["write::in_RoIs"] = knn["match::out_RoIs1"];
-                (*log_fra)["write::in_n_RoIs"] = features["filterf::out_n_RoIs"];
+                (*log_fra)["write::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
         }
 
         // save stats
         if (p_log_path)
         {
                 log_RoIs["write::in_RoIs0"] = knn["match::out_RoIs0"];
-                log_RoIs["write::in_n_RoIs0"] = delayer_n_RoIs["produce::out"];
+                log_RoIs["write::in_n_RoIs0"] = features0["filterf::out_n_RoIs"];
                 log_RoIs["write::in_RoIs1"] = knn["match::out_RoIs1"];
-                log_RoIs["write::in_n_RoIs1"] = features["filterf::out_n_RoIs"];
+                log_RoIs["write::in_n_RoIs1"] = features1["filterf::out_n_RoIs"];
                 log_RoIs["write::in_frame"] = video["generate::out_frame"];
 
                 // if (cur_fra > (uint32_t)p_vid_in_start) {
@@ -495,9 +506,9 @@ int main(int argc, char **argv)
                 log_kNN["write::in_conflicts"].bind(knn_data->conflicts);
 #endif
                 log_kNN["write::in_RoIs0"] = knn["match::out_RoIs0"];
-                log_kNN["write::in_n_RoIs0"] = delayer_n_RoIs["produce::out"];
+                log_kNN["write::in_n_RoIs0"] = features0["filterf::out_n_RoIs"];
                 log_kNN["write::in_RoIs1"] = knn["match::out_RoIs1"];
-                log_kNN["write::in_n_RoIs1"] = features["filterf::out_n_RoIs"];
+                log_kNN["write::in_n_RoIs1"] = features1["filterf::out_n_RoIs"];
                 log_kNN["write::in_frame"] = video["generate::out_frame"];
 
                 log_trk["write::in_frame"] = video["generate::out_frame"];
@@ -509,7 +520,7 @@ int main(int argc, char **argv)
                 (*visu)["display::in_frame"] = video["generate::out_frame"];
                 (*visu)["display::in_img"] = video["generate::out_img_gray8"];
                 (*visu)["display::in_RoIs"] = knn["match::out_RoIs1"];
-                (*visu)["display::in_n_RoIs"] = features["filterf::out_n_RoIs"];
+                (*visu)["display::in_n_RoIs"] = features1["filterf::out_n_RoIs"];
                 (*visu)("display").exec();
         }
 
@@ -520,29 +531,22 @@ int main(int argc, char **argv)
         std::vector<stage> pip_stages = {
             make_stage(
                 {
-                 &video("generate")
+                    &delayer("produce"),
+                    &video("generate"),
                 },
                 {
-                    &sig_del("compute"),
+                        &sd0("compute"), 
+                        &sd1("compute"),
                 },
-                {}
-                ),
+                {}),
             make_stage(
                 {
-                    &morpho("computef"),
+                    &morpho0("computef"),
+                    &morpho1("computef"),
                 },
-                {&features("filterf")},
-                {}
-                ),
-            make_stage({
-                        &delayer_n_RoIs("produce"),
-                        &delayer_RoIs("produce"),
-                        &delayer_n_RoIs("memorize"),
-                        &delayer_RoIs("memorize"),
-                        &knn("match"),
-                        &tracking("perform")
-                        }, {}, {})
-                };
+                {&knn("match")},
+                {}),
+            make_stage({&tracking("perform")}, {}, {})};
 
 
         if (p_ccl_fra_path)
@@ -574,11 +578,11 @@ int main(int argc, char **argv)
                 std::get<0>(pip_stages[2]).push_back(&(*visu)("display"));
         }
 
-        std::vector<spu::runtime::Task *> pipe_first_tasks = {&delayer_n_RoIs("produce"),&delayer_RoIs("produce"),&video("generate")};
+        std::vector<spu::runtime::Task *> pipe_first_tasks = {&video("generate"), &delayer("produce")};
         spu::runtime::Pipeline pip(pipe_first_tasks, pip_stages,
                                    {1, 2, 1},             // number of threads per stage -> one thread per stage
                                    {1, 1},              // buffer size between stages -> size 1 between stage 1 and 2
-                                   {false, false},        // active waiting between stage 1 and stage 2 -> no
+                                   {true, true},        // active waiting between stage 1 and stage 2 -> no
                                    {false, false, false}, // enable pinnig -> no
                                    {"PU0|PU1|PU2"});      // pinning to threads -> ignored because pinning is disabled
         if(p_stats)
@@ -610,6 +614,7 @@ int main(int argc, char **argv)
                         spu::tools::Stats::show(stages[s]->get_tasks_per_types(), ordered, display_throughput);
                 }
         }
+                    
         std::ofstream file("graph.dot");
         pip.export_dot(file);
 
