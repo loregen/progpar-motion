@@ -590,6 +590,7 @@ int main(int argc, char **argv)
         pip.exec([&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
                 n_processed_frames++;
                 n_moving_objs = tracking_count_objects(tracking_data->tracks);
+                fprintf(stderr, "(II) Frame n°%4d", (unsigned long)n_processed_frames);
                 fprintf(stderr, " -- Tracks = %3lu\r", (unsigned long)n_moving_objs);
                 fflush(stderr);
                 return video.is_done();
