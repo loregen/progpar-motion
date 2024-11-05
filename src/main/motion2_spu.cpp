@@ -531,10 +531,13 @@ int main(int argc, char **argv)
         std::vector<stage> pip_stages = {
             make_stage(
                 {
-                    &video("generate"),
                     &delayer("produce"),
+                    &video("generate"),
                 },
-                {&sd0("compute"), &sd1("compute")},
+                {
+                        &sd0("compute"), 
+                        &sd1("compute"),
+                },
                 {}),
             make_stage(
                 {
@@ -544,6 +547,29 @@ int main(int argc, char **argv)
                 {&knn("match")},
                 {}),
             make_stage({&tracking("perform")}, {}, {})};
+
+
+        if (p_ccl_fra_path)
+        {
+                std::get<2>(pip_stages[0]).push_back(&(*log_fra)("write"));
+                std::get<2>(pip_stages[1]).push_back(&(*log_fra)("write"));
+                std::get<0>(pip_stages[2]).push_back(&(*log_fra)("write"));
+        }
+        if (p_log_path)
+        {
+                std::get<2>(pip_stages[0]).push_back(&log_RoIs("write"));
+                std::get<2>(pip_stages[1]).push_back(&log_RoIs("write"));
+                std::get<0>(pip_stages[2]).push_back(&log_RoIs("write"));
+
+                std::get<2>(pip_stages[0]).push_back(&log_kNN("write"));
+                std::get<2>(pip_stages[1]).push_back(&log_kNN("write"));
+                std::get<0>(pip_stages[2]).push_back(&log_kNN("write"));
+
+                std::get<2>(pip_stages[0]).push_back(&log_trk("write"));
+                std::get<2>(pip_stages[1]).push_back(&log_trk("write"));
+                std::get<0>(pip_stages[2]).push_back(&log_trk("write"));
+
+        }
 
         if (visu)
         {
@@ -556,17 +582,18 @@ int main(int argc, char **argv)
         spu::runtime::Pipeline pip(pipe_first_tasks, pip_stages,
                                    {1, 1, 1},             // number of threads per stage -> one thread per stage
                                    {1, 1},                // buffer size between stages -> size 1 between stage 1 and 2
-                                   {false, false},        // active waiting between stage 1 and stage 2 -> no
+                                   {true, true},        // active waiting between stage 1 and stage 2 -> no
                                    {false, false, false}, // enable pinnig -> no
                                    {"PU0|PU1|PU2"});      // pinning to threads -> ignored because pinning is disabled
 
         TIME_POINT(start_compute);
-        pip.exec({[](const std::vector<const int *> &statuses)
-                  { return false; },
-                  [](const std::vector<const int *> &statuses)
-                  { return false; },
-                  [](const std::vector<const int *> &statuses)
-                  { return false; }});
+        pip.exec([&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
+                n_processed_frames++;
+                n_moving_objs = tracking_count_objects(tracking_data->tracks);
+                fprintf(stderr, " -- Tracks = %3lu\r", (unsigned long)n_moving_objs);
+                fflush(stderr);
+                return video.is_done();
+        });
         TIME_POINT(stop_compute);
 
         /* #############  Old sequential stuff ##########*/
