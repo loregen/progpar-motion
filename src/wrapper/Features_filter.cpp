@@ -58,7 +58,7 @@ Features_filter::Features_filter(const int i0, const int i1, const int j0, const
         
 
         *n_RoIs_out = features_filter_surface(in_labels, (uint32_t **) in_labels, ff.i0, ff.i1, ff.j0, ff.j1,(RoI_t *) RoIs_tmp, *n_RoIs, ff.min_size_f, ff.max_size_f);
-        assert(*n_RoIs <= (uint32_t)max_size_roi2);
+        assert(*n_RoIs_out <= (uint32_t)max_size_roi2);
         features_shrink_basic(RoIs_tmp, *n_RoIs, RoIs);
         return spu::runtime::status_t::SUCCESS;
     });

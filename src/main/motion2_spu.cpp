@@ -581,7 +581,7 @@ int main(int argc, char **argv)
         std::vector<spu::runtime::Task *> pipe_first_tasks = {&video("generate"), &delayer("produce")};
         spu::runtime::Pipeline pip(pipe_first_tasks, pip_stages,
                                    {1, 1, 1},             // number of threads per stage -> one thread per stage
-                                   {1, 1},                // buffer size between stages -> size 1 between stage 1 and 2
+                                   {1, 1},              // buffer size between stages -> size 1 between stage 1 and 2
                                    {true, true},        // active waiting between stage 1 and stage 2 -> no
                                    {false, false, false}, // enable pinnig -> no
                                    {"PU0|PU1|PU2"});      // pinning to threads -> ignored because pinning is disabled
@@ -614,26 +614,9 @@ int main(int argc, char **argv)
                         spu::tools::Stats::show(stages[s]->get_tasks_per_types(), ordered, display_throughput);
                 }
         }
-        /* #############  Old sequential stuff ##########*/
-        //     std::vector<spu::runtime::Task*> init_tasks = {&delayer("produce"), &video("generate")};
-        //     spu::runtime::Sequence seq(init_tasks);
-        //     // enable the statistics collection for each task of the sequence
-        //     for (auto& mdl : seq.get_modules<spu::module::Module>(false))
-        //         for (auto& tsk : mdl->tasks)
-        //             tsk->set_stats(true);
-        //     TIME_POINT(start_compute);
-        //     seq.exec([&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
-        //         n_processed_frames++;
-        //         n_moving_objs = tracking_count_objects(tracking_data->tracks);
-        //         fprintf(stderr, " -- Tracks = %3lu\r", (unsigned long)n_moving_objs);
-        //         fflush(stderr);
-        //         return video.is_done();
-        //     });
-        //    TIME_POINT(stop_compute);
-        //    const bool ordered = true, display_throughput = false;
-        //     spu::tools::Stats::show(seq.get_modules_per_types(), ordered, display_throughput);
-        //     std::ofstream file("graph.dot");
-        //     seq.export_dot(file);
+                    
+        std::ofstream file("graph.dot");
+        pip.export_dot(file);
 
         n_moving_objs = tracking_count_objects(tracking_data->tracks);
 
@@ -663,6 +646,7 @@ int main(int argc, char **argv)
         // ---------- //
         // -- FREE -- //
         // ---------- //
+        
         kNN_free_data(knn_data);
         tracking_free_data(tracking_data);
 
