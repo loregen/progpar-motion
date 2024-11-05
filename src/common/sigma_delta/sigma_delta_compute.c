@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <nrc2.h>
 #include <omp.h>
+#include <mipp.h>
 
 #include "motion/macros.h"
 #include "motion/sigma_delta/sigma_delta_compute.h"
@@ -23,7 +24,7 @@ sigma_delta_data_t* sigma_delta_alloc_data(const int i0, const int i1, const int
 
 void sigma_delta_init_data(sigma_delta_data_t* sd_data, const uint8_t** img_in, const int i0, const int i1,
                            const int j0, const int j1) {
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int i = i0; i <= i1; i++) {
         for (int j = j0; j <= j1; j++) {
             sd_data->M[i][j] = img_in != NULL ? img_in[i][j] : sd_data->vmax;

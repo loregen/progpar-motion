@@ -214,9 +214,10 @@ endif()
 if (MOTION_SPU_RUNTIME)
 	motion_target_compile_definitions("${motion_targets_list}" PUBLIC MOTION_SPU_LINK)
 endif()
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/mipp/src/mipp.h")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/mipp/include/mipp.h")
 	motion_target_compile_definitions("${motion_targets_list}" PUBLIC MIPP_ENABLE_BACKTRACE)
 endif()
+
 
 # Keep ffmpeg-io enabled
 motion_target_compile_definitions("${motion_targets_list}" PUBLIC MOTION_USE_FFMPEG_IO)
@@ -240,8 +241,8 @@ endif()
 if (MOTION_SPU_RUNTIME)
 	motion_target_include_directories("${motion_targets_list}" PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${inc_dir}/cpp)
 endif()
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/mipp/src/mipp.h")
-	motion_target_include_directories("${motion_targets_list}" PUBLIC "lib/MIPP/src")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/mipp/include/mipp.h")
+	motion_target_include_directories("${motion_targets_list}" PUBLIC "lib/mipp/include")
 	message(STATUS "Motion - Header found: MIPP")
 endif()
 
