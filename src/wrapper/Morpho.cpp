@@ -47,6 +47,23 @@ Morpho::Morpho(const int i0, const int i1, const int j0, const int j1)
 
 }
 
+
+Morpho* Morpho::clone() const {
+    auto m = new Morpho(*this);
+    m->deep_copy(*this); // we override this method just after
+    return m;
+}
+// in the deep_copy method, 'this' is the newly allocated object while 'm' is the former object
+void Morpho::deep_copy(const Morpho& m) {
+    // call the 'deep_copy' method of the Module class
+    Stateful::deep_copy(m);
+    // allocate new morpho inner data
+    this->morpho_data = morpho_alloc_data(m.morpho_data->i0, m.morpho_data->i1,
+    m.morpho_data->j0, m.morpho_data->j1);
+    // initialize the previously allocated data
+    morpho_init_data(this->morpho_data);
+ }
+
 Morpho::~Morpho() {
     morpho_free_data(this->morpho_data);
 }

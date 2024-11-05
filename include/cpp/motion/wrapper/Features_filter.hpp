@@ -21,5 +21,7 @@ protected:
 public:
     Features_filter(const int i0, const int i1, const int j0, const int j1, const size_t max_size_f,
                      const size_t min_size_f, const size_t max_size_roi, const size_t max_size_roi2);
+    void deep_copy(const Features_filter& m);
+    Features_filter* clone() const;
     virtual ~Features_filter();
 };

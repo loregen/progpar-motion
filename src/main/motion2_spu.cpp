@@ -580,7 +580,7 @@ int main(int argc, char **argv)
 
         std::vector<spu::runtime::Task *> pipe_first_tasks = {&video("generate"), &delayer("produce")};
         spu::runtime::Pipeline pip(pipe_first_tasks, pip_stages,
-                                   {1, 1, 1},             // number of threads per stage -> one thread per stage
+                                   {1, 2, 1},             // number of threads per stage -> one thread per stage
                                    {1, 1},              // buffer size between stages -> size 1 between stage 1 and 2
                                    {true, true},        // active waiting between stage 1 and stage 2 -> no
                                    {false, false, false}, // enable pinnig -> no

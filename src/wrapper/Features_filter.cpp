@@ -64,6 +64,17 @@ Features_filter::Features_filter(const int i0, const int i1, const int j0, const
     });
 
 }
+Features_filter* Features_filter::clone() const {
+    auto m = new Features_filter(*this);
+    m->deep_copy(*this); // we override this method just after
+    return m;
+}
+// in the deep_copy method, 'this' is the newly allocated object while 'm' is the former object
+void Features_filter::deep_copy(const Features_filter& m) {
+    // call the 'deep_copy' method of the Module class
+    Stateful::deep_copy(m);
+    // allocate new morpho inner data
+ }
 
 Features_filter::~Features_filter() {
     // CCA_LSL_free_data(this->cca_data);

@@ -20,4 +20,6 @@ protected:
 public:
     Morpho(const int i0, const int i1, const int j0, const int j1);
     virtual ~Morpho();
+    void deep_copy(const Morpho& m);
+    Morpho* clone() const;
 };

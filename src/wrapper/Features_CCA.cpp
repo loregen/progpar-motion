@@ -30,6 +30,18 @@ CCA::CCA(const int i0, const int i1, const int j0, const int j1, const size_t ma
     });
 }
 
+CCA* CCA::clone() const{
+    auto m = new CCA(*this);
+    m->deep_copy(*this); // we override this method just after
+    return m;
+}
+// in the deep_copy method, 'this' is the newly allocated object while 'm' is the former object
+void CCA::deep_copy(const CCA& m){
+    // call the 'deep_copy' method of the Module class
+    Stateful::deep_copy(m);
+    // allocate new morpho inner data
+}
+
 CCA::~CCA() {
     // CCA_LSL_free_data(this->cca_data);
 }

@@ -36,6 +36,22 @@ CCL::CCL(const int i0, const int i1, const int j0, const int j1, uint8_t no_init
     });
 }
 
+CCL* CCL::clone() const{
+    auto m = new CCL(*this);
+    m->deep_copy(*this); // we override this method just after
+    return m;
+}
+// in the deep_copy method, 'this' is the newly allocated object while 'm' is the former object
+void CCL::deep_copy(const CCL& m){
+    // call the 'deep_copy' method of the Module class
+    Stateful::deep_copy(m);
+    // allocate new morpho inner data
+    this->ccl_data = CCL_LSL_alloc_data(m.ccl_data->i0, m.ccl_data->i1,
+    m.ccl_data->j0, m.ccl_data->j1);
+    // initialize the previously allocated data
+    CCL_LSL_init_data(this->ccl_data);
+
+}
 CCL::~CCL() {
     CCL_LSL_free_data(this->ccl_data);
 }

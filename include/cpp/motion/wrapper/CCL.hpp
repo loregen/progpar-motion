@@ -21,5 +21,7 @@ protected:
     int def_p_cca_roi_max1 = 65536;
 public:
     CCL(const int i0, const int i1, const int j0, const int j1, uint8_t no_init_labels);
+    void deep_copy(const CCL& m);
+    CCL* clone() const;
     virtual ~CCL();
 };

@@ -18,4 +18,6 @@ protected:
 public:
     CCA(const int i0, const int i1, const int j0, const int j1, const size_t max_size);
     virtual ~CCA();
+    void deep_copy(const CCA& m);
+    CCA* clone() const;
 };

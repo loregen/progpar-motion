@@ -51,3 +51,17 @@ kNN::kNN(kNN_data_t* knn_data, int knn_k, uint32_t knn_d, float knn_s, uint32_t 
         }
     );
 }
+
+
+kNN* kNN::clone() const {
+    auto m = new kNN(*this);
+    m->deep_copy(*this); // we override this method just after
+    return m;
+}
+
+// in the deep_copy method, 'this' is the newly allocated object while 'm' is the former object
+
+void kNN::deep_copy(const kNN& m) {
+    // call the 'deep_copy' method of the Module class
+    Stateful::deep_copy(m);
+ }
