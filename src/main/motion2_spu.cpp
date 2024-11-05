@@ -585,11 +585,11 @@ int main(int argc, char **argv)
                                    {true, true},        // active waiting between stage 1 and stage 2 -> no
                                    {false, false, false}, // enable pinnig -> no
                                    {"PU0|PU1|PU2"});      // pinning to threads -> ignored because pinning is disabled
-
-            for(auto& seq: pip.get_stages())    
-            for(auto& mdl : seq->get_modules<spu::module::Module>(false))
-            for(auto& tsk : mdl->tasks)
-                    tsk->set_stats(true);
+        if(p_stats)
+        for(auto& seq: pip.get_stages())    
+        for(auto& mdl : seq->get_modules<spu::module::Module>(false))
+        for(auto& tsk : mdl->tasks)
+                tsk->set_stats(true);
 
         TIME_POINT(start_compute);
         pip.exec([&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
@@ -604,13 +604,15 @@ int main(int argc, char **argv)
 
 
         const bool ordered = true, display_throughput = false;
-        auto stages = pip.get_stages();
-        for (size_t s = 0; s < stages.size(); s++) {
-                const int n_threads = stages[s]->get_n_threads();
-                std::cout << "#" << std::endl << "# Pipeline stage " << (s + 1) << " ("
-                          << n_threads << " thread(s)): " << std::endl;
+        if(p_stats){
+                auto stages = pip.get_stages();
+                for (size_t s = 0; s < stages.size(); s++) {
+                        const int n_threads = stages[s]->get_n_threads();
+                        std::cout << "#" << std::endl << "# Pipeline stage " << (s + 1) << " ("
+                                << n_threads << " thread(s)): " << std::endl;
 
-                spu::tools::Stats::show(stages[s]->get_tasks_per_types(), ordered, display_throughput);
+                        spu::tools::Stats::show(stages[s]->get_tasks_per_types(), ordered, display_throughput);
+                }
         }
         /* #############  Old sequential stuff ##########*/
         //     std::vector<spu::runtime::Task*> init_tasks = {&delayer("produce"), &video("generate")};
