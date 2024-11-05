@@ -579,8 +579,8 @@ int main(int argc, char **argv)
                                    {1, 2, 1},             // number of threads per stage -> one thread per stage
                                    {1, 1},              // buffer size between stages -> size 1 between stage 1 and 2
                                    {false, false},        // active waiting between stage 1 and stage 2 -> no
-                                   {false, false, false}, // enable pinnig -> no
-                                   {"PU0|PU1|PU2"});      // pinning to threads -> ignored because pinning is disabled
+                                   {true, true, true}, // enable pinnig -> no
+                                   {"PU0|PU1,PU2|PU3"});      // pinning to threads -> ignored because pinning is disabled
         if(p_stats)
         for(auto& seq: pip.get_stages())    
         for(auto& mdl : seq->get_modules<spu::module::Module>(false))
@@ -588,14 +588,17 @@ int main(int argc, char **argv)
                 tsk->set_stats(true);
 
         TIME_POINT(start_compute);
-        pip.exec([&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
+        pip.exec({
+            []() {return false;},
+            []() {return false;},
+            [&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
                 n_processed_frames++;
                 n_moving_objs = tracking_count_objects(tracking_data->tracks);
                 fprintf(stderr, "(II) Frame n°%4d", (unsigned long)n_processed_frames);
                 fprintf(stderr, " -- Tracks = %3lu\r", (unsigned long)n_moving_objs);
                 fflush(stderr);
-                return video.is_done();
-        });
+                return false;
+        }});
         TIME_POINT(stop_compute);
 
 
