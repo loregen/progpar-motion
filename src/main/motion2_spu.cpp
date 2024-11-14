@@ -568,11 +568,11 @@ int main(int argc, char **argv)
 
         std::vector<spu::runtime::Task *> pipe_first_tasks = {&delayer_n_RoIs("produce"), &delayer_RoIs("produce"), &video("generate")};
         spu::runtime::Pipeline pip(pipe_first_tasks, pip_stages,
-                                   {1, 5, 1},
+                                   {1, 4, 1},
                                    {1, 1},
                                    {false, false},
                                    {true, true, true},
-                                   {"PU0|PU1,PU2,PU3,PU4,PU5|PU6"});
+                                   {"PU0|PU1,PU2,PU3,PU4|PU5"});
         if (p_stats)
                 for (auto &seq : pip.get_stages())
                         for (auto &mdl : seq->get_modules<spu::module::Module>(false))
