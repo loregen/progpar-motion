@@ -385,15 +385,15 @@ int main(int argc, char **argv)
         // CCL ccl0(i0, i1, j0, j1, 0), ccl1(i0, i1, j0, j1, 0);
         // CCA cca0(i0, i1, j0, j1, p_cca_roi_max1), cca1(i0, i1, j0, j1, p_cca_roi_max1);
         // Features_filter features0(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2), features1(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
-        Sigma_delta     sig_del(i0, i1, j0, j1, p_sd_n);
-        Morpho          morpho(i0, i1, j0, j1);
-        CCL             ccl(i0, i1, j0, j1, 0);
-        CCA             cca(i0, i1, j0, j1, p_cca_roi_max1);
+        Sigma_delta sig_del(i0, i1, j0, j1, p_sd_n);
+        Morpho morpho(i0, i1, j0, j1);
+        CCL ccl(i0, i1, j0, j1, 0);
+        CCA cca(i0, i1, j0, j1, p_cca_roi_max1);
         Features_filter features(i0, i1, j0, j1, p_flt_s_max, p_flt_s_min, p_cca_roi_max1, p_cca_roi_max2);
-        kNN             knn(knn_data, p_knn_k, p_knn_d, p_knn_s, p_cca_roi_max2);
+        kNN knn(knn_data, p_knn_k, p_knn_d, p_knn_s, p_cca_roi_max2);
 
         // spu::module::Delayer<uint8_t> delayer(((i1 - i0) + 1) * ((j1 - j0) + 1), 0);
-        spu::module::Delayer<uint8_t> delayer_RoIs(p_cca_roi_max2*sizeof(RoI_t), 0);
+        spu::module::Delayer<uint8_t> delayer_RoIs(p_cca_roi_max2 * sizeof(RoI_t), 0);
         spu::module::Delayer<uint32_t> delayer_n_RoIs(1, 0);
 
         std::unique_ptr<Visu> visu;
@@ -454,9 +454,9 @@ int main(int argc, char **argv)
         // ----------------------------- //
 
         // step 6: k-NN matching (RoIs associations)
-        knn["match::in_RoIs1"]   = features["filterf::out_RoIs"];
+        knn["match::in_RoIs1"] = features["filterf::out_RoIs"];
         knn["match::in_n_RoIs1"] = features["filterf::out_n_RoIs"];
-        knn["match::in_RoIs0"]   = delayer_RoIs["produce::out"];
+        knn["match::in_RoIs0"] = delayer_RoIs["produce::out"];
         knn["match::in_n_RoIs0"] = delayer_n_RoIs["produce::out"];
         // knn["match::in_RoIs0"]   = delayer_RoIs["produce::out"];
         // knn["match::in_n_RoIs0"] = delayer_n_RoIs["produce::out"];
@@ -519,31 +519,24 @@ int main(int argc, char **argv)
 
         std::vector<stage> pip_stages = {
             make_stage(
-                {
-                 &video("generate")
-                },
+                {&video("generate")},
                 {
                     &sig_del("compute"),
                 },
-                {}
-                ),
+                {}),
             make_stage(
                 {
                     &morpho("computef"),
                 },
                 {&features("filterf")},
-                {}
-                ),
-            make_stage({
-                        &delayer_n_RoIs("produce"),
+                {}),
+            make_stage({&delayer_n_RoIs("produce"),
                         &delayer_RoIs("produce"),
                         &delayer_n_RoIs("memorize"),
                         &delayer_RoIs("memorize"),
                         &knn("match"),
-                        &tracking("perform")
-                        }, {}, {})
-                };
-
+                        &tracking("perform")},
+                       {}, {})};
 
         if (p_ccl_fra_path)
         {
@@ -564,7 +557,6 @@ int main(int argc, char **argv)
                 std::get<2>(pip_stages[0]).push_back(&log_trk("write"));
                 std::get<2>(pip_stages[1]).push_back(&log_trk("write"));
                 std::get<0>(pip_stages[2]).push_back(&log_trk("write"));
-
         }
 
         if (visu)
@@ -574,41 +566,45 @@ int main(int argc, char **argv)
                 std::get<0>(pip_stages[2]).push_back(&(*visu)("display"));
         }
 
-        std::vector<spu::runtime::Task *> pipe_first_tasks = {&delayer_n_RoIs("produce"),&delayer_RoIs("produce"),&video("generate")};
+        std::vector<spu::runtime::Task *> pipe_first_tasks = {&delayer_n_RoIs("produce"), &delayer_RoIs("produce"), &video("generate")};
         spu::runtime::Pipeline pip(pipe_first_tasks, pip_stages,
-                                   {1, 2, 1},             // number of threads per stage -> one thread per stage
-                                   {1, 1},              // buffer size between stages -> size 1 between stage 1 and 2
-                                   {false, false},        // active waiting between stage 1 and stage 2 -> no
-                                   {true, true, true}, // enable pinnig -> no
-                                   {"PU0|PU1,PU2|PU3"});      // pinning to threads -> ignored because pinning is disabled
-        if(p_stats)
-        for(auto& seq: pip.get_stages())    
-        for(auto& mdl : seq->get_modules<spu::module::Module>(false))
-        for(auto& tsk : mdl->tasks)
-                tsk->set_stats(true);
+                                   {1, 5, 1},
+                                   {1, 1},
+                                   {false, false},
+                                   {true, true, true},
+                                   {"PU0|PU1,PU2,PU3,PU4,PU5|PU6"});
+        if (p_stats)
+                for (auto &seq : pip.get_stages())
+                        for (auto &mdl : seq->get_modules<spu::module::Module>(false))
+                                for (auto &tsk : mdl->tasks)
+                                        tsk->set_stats(true);
 
         TIME_POINT(start_compute);
-        pip.exec({
-            []() {return false;},
-            []() {return false;},
-            [&n_processed_frames, &n_moving_objs, tracking_data, &video]() {
-                n_processed_frames++;
-                n_moving_objs = tracking_count_objects(tracking_data->tracks);
-                fprintf(stderr, "(II) Frame n°%4d", (unsigned long)n_processed_frames);
-                fprintf(stderr, " -- Tracks = %3lu\r", (unsigned long)n_moving_objs);
-                fflush(stderr);
-                return false;
-        }});
+        pip.exec({[]()
+                  { return false; },
+                  []()
+                  { return false; },
+                  [&n_processed_frames, &n_moving_objs, tracking_data, &video]()
+                  {
+                          n_processed_frames++;
+                          n_moving_objs = tracking_count_objects(tracking_data->tracks);
+                          fprintf(stderr, "(II) Frame n°%4d", (unsigned long)n_processed_frames);
+                          fprintf(stderr, " -- Tracks = %3lu\r", (unsigned long)n_moving_objs);
+                          fflush(stderr);
+                          return false;
+                  }});
         TIME_POINT(stop_compute);
 
-
         const bool ordered = true, display_throughput = false;
-        if(p_stats){
+        if (p_stats)
+        {
                 auto stages = pip.get_stages();
-                for (size_t s = 0; s < stages.size(); s++) {
+                for (size_t s = 0; s < stages.size(); s++)
+                {
                         const int n_threads = stages[s]->get_n_threads();
-                        std::cout << "#" << std::endl << "# Pipeline stage " << (s + 1) << " ("
-                                << n_threads << " thread(s)): " << std::endl;
+                        std::cout << "#" << std::endl
+                                  << "# Pipeline stage " << (s + 1) << " ("
+                                  << n_threads << " thread(s)): " << std::endl;
 
                         spu::tools::Stats::show(stages[s]->get_tasks_per_types(), ordered, display_throughput);
                 }
@@ -644,7 +640,7 @@ int main(int argc, char **argv)
         // ---------- //
         // -- FREE -- //
         // ---------- //
-        
+
         kNN_free_data(knn_data);
         tracking_free_data(tracking_data);
 
