@@ -568,7 +568,7 @@ int main(int argc, char **argv)
 
         std::vector<spu::runtime::Task *> pipe_first_tasks = {&delayer_n_RoIs("produce"), &delayer_RoIs("produce"), &video("generate")};
         spu::runtime::Pipeline pip(pipe_first_tasks, pip_stages,
-                                   {1, 4, 1},
+                                   {1, 5, 1},
                                    {1, 1},
                                    {false, false},
                                    {true, true, true},
