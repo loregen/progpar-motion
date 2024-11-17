@@ -572,7 +572,7 @@ int main(int argc, char **argv)
                                    {1, 1},
                                    {false, false},
                                    {true, true, true},
-                                   {"PU0|PU1,PU2,PU3,PU4|PU5"});
+                                   {"PU0|PU1,PU2,PU3,PU4,PU5|PU6"});
         if (p_stats)
                 for (auto &seq : pip.get_stages())
                         for (auto &mdl : seq->get_modules<spu::module::Module>(false))

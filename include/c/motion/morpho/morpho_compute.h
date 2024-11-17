@@ -82,3 +82,7 @@ void morpho_compute_opening3(morpho_data_t* morpho_data, const uint8_t** img_in,
  */
 void morpho_compute_closing3(morpho_data_t* morpho_data, const uint8_t** img_in, uint8_t** img_out, const int i0,
                              const int i1, const int j0, const int j1);
+
+
+void morpho_compute_opening_closing3(morpho_data_t *morpho_data, const uint8_t **img_in, uint8_t **img_out, const int i0,
+                             const int i1, const int j0, const int j1);

@@ -39,8 +39,9 @@ Morpho::Morpho(const int i0, const int i1, const int j0, const int j1)
 
         const uint8_t** in_img = t[sf_img].get_2d_dataptr<const uint8_t>();
 
-        morpho_compute_opening3(mrp.morpho_data, in_img, (uint8_t **) in_img, mrp.i0, mrp.i1, mrp.j0, mrp.j1);
-        morpho_compute_closing3(mrp.morpho_data, in_img, (uint8_t**) in_img, mrp.i0, mrp.i1, mrp.j0, mrp.j1);
+        // morpho_compute_opening3(mrp.morpho_data, in_img, (uint8_t **) in_img, mrp.i0, mrp.i1, mrp.j0, mrp.j1);
+        // morpho_compute_closing3(mrp.morpho_data, in_img, (uint8_t**) in_img, mrp.i0, mrp.i1, mrp.j0, mrp.j1);
+        morpho_compute_opening_closing3(mrp.morpho_data, in_img, (uint8_t**) in_img, mrp.i0, mrp.i1, mrp.j0, mrp.j1);
 
         return spu::runtime::status_t::SUCCESS;
     });
