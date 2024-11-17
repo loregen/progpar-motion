@@ -30,16 +30,10 @@ void set_bit_from_source(uint8_t *target, char source, int n)
 
 void bitpack(const uint8_t **matrix_in, uint8_t **matrix_out, const int i0, const int i1, const int j0, const int j1, const int carry, const int ncolp)
 {
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int i = i0; i <= i1; i++)
     {
         int subidx = 0;
-        int jdebug = 0;
-        int jdebug1 = j0;
-        for (int j = j0; j <= j1; j++)
-        {
-            jdebug += 1;
-        }
 
         for (int j = j0; j <= j1; j += 8)
         {
@@ -54,38 +48,16 @@ void bitpack(const uint8_t **matrix_in, uint8_t **matrix_out, const int i0, cons
             packed += (matrix_in[i][j + 7] ? 0b00000001 : 0);
             matrix_out[i][subidx] = packed;
             subidx += 1;
-            jdebug1 += 8;
-            // if(i == i0)
-            // {
-            //     printf("%d %d: %d%d%d%d%d%d%d%d ",i,j,
-            //                                       matrix_in[i][j + 0]%254,
-            //                                       matrix_in[i][j + 1]%254,
-            //                                       matrix_in[i][j + 2]%254,
-            //                                       matrix_in[i][j + 3]%254,
-            //                                       matrix_in[i][j + 4]%254,
-            //                                       matrix_in[i][j + 5]%254,
-            //                                       matrix_in[i][j + 6]%254,
-            //                                       matrix_in[i][j + 7]%254);
-            //     print_uint8_t(packed);
-            // }
         }
-        // printf("jdebug %d jdebug1 %d ncolp %d carry %d subidx %d \n", jdebug, jdebug1, ncolp, carry,subidx - 1);
     }
 }
 
 void bitunpack(const uint8_t **matrix_in, uint8_t **matrix_out, const int i0, const int i1, const int j0, const int j1, int carry, const int ncolp)
 {
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int i = i0; i <= i1; i++)
     {
         int subidx = 0;
-        int jdebug = 0;
-        int jdebug1 = j0;
-        for (int j = j0; j <= j1; j++)
-        {
-            jdebug += 1;
-        }
-
         for (int j = j0; j <= j1; j += 8)
         {
             matrix_out[i][j + 0] = ((matrix_in[i][subidx] & 0b10000000) > 0 ? 255 : 0);
@@ -97,9 +69,7 @@ void bitunpack(const uint8_t **matrix_in, uint8_t **matrix_out, const int i0, co
             matrix_out[i][j + 6] = ((matrix_in[i][subidx] & 0b00000010) > 0 ? 255 : 0);
             matrix_out[i][j + 7] = ((matrix_in[i][subidx] & 0b00000001) > 0 ? 255 : 0);
             subidx += 1;
-            jdebug1 += 8;
         }
-        // printf("jdebug %d jdebug1 %d ncolp %d carry %d subidx %d \n", jdebug, jdebug1, ncolp, carry,subidx - 1);
     }
 }
 
@@ -411,7 +381,7 @@ void morpho_compute_opening3(morpho_data_t *morpho_data, const uint8_t **img_in,
 {
     assert(img_in != NULL);
     assert(img_out != NULL);
-    
+
     bitpack((const uint8_t **)img_in, morpho_data->IN_packed, i0, i1, j0, j1, morpho_data->carry, morpho_data->ncolp);
     morpho_compute_erosion3_packed((const uint8_t **)morpho_data->IN_packed, morpho_data->IB_packed, i0, i1, j0, j1, morpho_data->carry, morpho_data->ncolp);
     morpho_compute_dilation3_packed((const uint8_t **)morpho_data->IB_packed, morpho_data->IN_packed, i0, i1, j0, j1, morpho_data->carry, morpho_data->ncolp);
