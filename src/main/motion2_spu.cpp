@@ -3,6 +3,71 @@ Name: Pierpaolo Marzo
 Group: Lorenzo Gentile, Erik Fabrizzi
 */
 
+// Hands-on Session 7 – Multi-threading for Motion Application //
+
+/*
+1] Motion Parallelization - throughputs before parallelization
+./bin/motion2 -> -> Took 11.381 seconds (avg 8 FPS)
+./bin/motion2-spu -> Took 11.578 seconds (avg 8 FPS)
+
+1.1] Pipeline Parallelism
+Task 1
+./bin/motion2-spu -> -> Took  8.998 seconds (avg 11 FPS)
+
+Task 3
+From the stats output we can see that the `pull_n` task of the third stage takes 99.98% of the stage overall time. This means that the third stage is constanly waiting for the output of the previous stage. This is a clear indication that the `Morpho` module is the bottleneck of the pipeline.
+
+1.2] Tasks Replication
+Task 1
+If we try to assign 2 threads to the second stage, the program stops at the following assertion:
+what():  In the '/home/sesi/Workspace/progpar-motion/lib/streampu/src/Runtime/Sequence/Sequence.cpp' file at line 1427 ('replicate' function): "It is not possible to replicate this sequence because at least one of its tasks is not replicable (t->get_name() = 'computef', t->get_module().get_name() = 'Morpho')."
+This is expected since the `Morpho` module is not yet replicable.
+
+Task 2
+2 threads on second stage: ./bin/motion2-spu -> Took  9.149 seconds (avg 10 FPS)
+3 threads on second stage: ./bin/motion2-spu -> Took  9.360 seconds (avg 10 FPS)
+4 threads on second stage: ./bin/motion2-spu -> Took  8.215 seconds (avg 12 FPS)
+
+Replication of the second stage on 2 threads does not improve performance, since we are limited by the throughput of the first stage (sigma-delta).
+Replicating on 3 threads doesn't improve performance either, but replicating on 4 threads gives a slight speedup. From the statistics we can see that this is due to a better runtime of morpho, probably caused by changes in frequency of the processors.
+
+1.3] Task Graph Simplification
+Task 1
+./bin/motion2-spu -> Took  3.266 seconds (avg 30 FPS)
+We have a significant speedup by simplifying the task graph since we have significantly reduced the number of operations needed.
+
+Task 2
+Replicating the last stage is not useful since the last stage, which is comprised of knn and tracking, spends most of its time waiting for the output of the second stage, and almost no time in the actual computation. There is no reason to allocate more resources to the last stage.
+
+Task 3
+By changing the thread pinning configuration, we were not able to improve the performance of the pipeline. 
+
+1.4] Data Parallelism with OpenMP
+Task 2
+Best config found: 1 thread on first and third stage, 2 threads on second stage, OMP_NUM_THREADS=3. All threads are pinned on the 4 A-57 cores.
+./bin/motion2-spu -> Took  3.010 seconds (avg 33 FPS)
+
+1.5] Task Vectorization
+Best config found: 1 thread on first and third stage, 2 threads on second stage, OMP_NUM_THREADS=6. All threads are pinned on the 4 A-57 cores.
+./bin/motion2-spu -> Took  2.691 seconds (avg 37 FPS)
+
+1.6 Bonus] Data Parallelism versus Pipeline+Replication
+Task 1
+We did not have time to implement this point. Sorry :(
+
+We did not separate OpenMP parallelization and MIPP vectorization, so the following benchmarks account for both optimizations.
+Task 2
+Best config found: 1 thread on each stage, OMP_NUM_THREADS=6. All threads are pinned on the Cortex-A57 cores. We removed the second thread from the morpho stage because it was waiting for the stage to finish. This way we have more OpenMP work available.
+./bin/motion2-spu -> Took  2.301 seconds (avg 43 FPS)
+
+From the stats, we can see that now the bottleneck in the pipeline seems to be the video decoding task.
+
+1.7 [Don’t do this it’s a trap] I’m a Thug
+Task 2
+We found that the best config was the same as the previous benchmark and that we did not obtain substantial performance improvement bz adding bitpacking. The clear reason is that we contained the bitpacking approach to the morpho module, thus requiring to pack and unpack the data before and after configuration. The best approach would be to let the output of sigma delta already be packed and adapt CCl to deal with packed data.
+
+*/
+
 /*
 TASK 7
 
@@ -568,11 +633,11 @@ int main(int argc, char **argv)
 
         std::vector<spu::runtime::Task *> pipe_first_tasks = {&delayer_n_RoIs("produce"), &delayer_RoIs("produce"), &video("generate")};
         spu::runtime::Pipeline pip(pipe_first_tasks, pip_stages,
-                                   {1, 4, 1},
+                                   {1, 2, 1},
                                    {1, 1},
                                    {false, false},
                                    {true, true, true},
-                                   {"PU0|PU1,PU2,PU3,PU4|PU5"});
+                                   {"PU1|PU3,PU4|PU2"});
         if (p_stats)
                 for (auto &seq : pip.get_stages())
                         for (auto &mdl : seq->get_modules<spu::module::Module>(false))
