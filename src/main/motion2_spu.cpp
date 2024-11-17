@@ -3,6 +3,62 @@ Name: Pierpaolo Marzo
 Group: Lorenzo Gentile, Erik Fabrizzi
 */
 
+// Hands-on Session 7 – Multi-threading for Motion Application //
+
+/*
+1] Motion Parallelization - throughputs before parallelization
+./bin/motion2 -> Took  2.513 seconds (avg 7 FPS)
+./bin/motion2-spu -> Took  2.482 seconds (avg 8 FPS)
+
+1.1] Pipeline Parallelism
+Task 1
+./bin/motion2-spu -> Took  1.911 seconds (avg 10 FPS)
+
+Task 3
+From the stats output we can see that the `pull_n` task of the third stage takes 98.8% of the stage overall time. This means that the third stage is constanly waiting for the output of the previous stage. This is a clear indication that the `Morpho` module is the bottleneck of the pipeline.
+
+1.2] Tasks Replication
+Task 1
+If we try to assign 2 threads to the second stage, the program stops at the following assertion:
+what():  In the '/home/sesi/Workspace/progpar-motion/lib/streampu/src/Runtime/Sequence/Sequence.cpp' file at line 1427 ('replicate' function): "It is not possible to replicate this sequence because at least one of its tasks is not replicable (t->get_name() = 'computef', t->get_module().get_name() = 'Morpho')."
+This is expected since the `Morpho` module is not replicable.
+
+Task 2
+2 threads on second stage: ./bin/motion2-spu -> Took  1.737 seconds (avg 11 FPS)
+3 threads on second stage: ./bin/motion2-spu -> Took  2.205 seconds (avg 8 FPS)
+4 threads on second stage: ./bin/motion2-spu -> Took  2.891 seconds (avg 6 FPS)
+
+With 2 threads assigned on the second stage we have a slight speedup. If we further increase the number of threads, the performance decreases again.
+
+1.3] Task Graph Simplification
+Task 1
+./bin/motion2-spu -> Took  1.167 seconds (avg 17 FPS)
+We have a significant speedup by simplifying the task graph. TODO
+
+Task 2
+TODO
+
+Task 3
+If we also pin the 4 threads on the 4 A-57 cores, we obtain the best configuration due to core locality. TODOOOOOOOO
+./bin/motion2-spu -> Took  0.890 seconds (avg 22 FPS)
+
+1.4] Data Parallelism with OpenMP
+Task 2
+Best config found: 1 thread on first and third stage, 2 threads on second stage, OMP_NUM_THREADS=4. All threads are pinned on the 4 A-57 cores.
+./bin/motion2-spu -> Took  0.741 seconds (avg 26 FPS)
+
+1.5] Task Vectorization
+Best config found: 1 thread on first and third stage, 2 threads on second stage, OMP_NUM_THREADS=6. All threads are pinned on the 4 A-57 cores.
+./bin/motion2-spu -> Took  0.665 seconds (avg 30 FPS)
+
+1.6 Bonus] Data Parallelism versus Pipeline+Replication
+Task 2
+Best config found: 1 thread on first and third stage, 3 threads on second stage, OMP_NUM_THREADS=2. First and last stages are pinned on the 2 Denver cores, remaining 3 threads are pinned on 3 of the 4 A-57 cores.
+./bin/motion2-spu -> Took  0.551 seconds (avg 36 FPS)
+
+From the stats, we can see that now the bottleneck in the pipeline seems to be the video decoding task.
+*/
+
 /*
 TASK 7
 
